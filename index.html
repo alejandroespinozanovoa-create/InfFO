@@ -1,166 +1,1899 @@
-#!/usr/bin/env python3
-"""
-convert.py - Convierte INFORME FIBRA FINAL.xlsx → data.js
-Se ejecuta automáticamente via GitHub Actions al subir el Excel.
-"""
- 
-import os
-import json
-import glob
-import re
-import pandas as pd
-import numpy as np
-from datetime import datetime
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Informe Gerencial · Fibra Canal Online</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --red:     #E8232A;
+  --red-d:   #B81920;
+  --red-l:   #FDEAEA;
+  --navy:    #0A1628;
+  --navy-m:  #0E2040;
+  --blue:    #1A3A6B;
+  --blue-m:  #1E4D8C;
+  --silver:  #F4F6FA;
+  --silver-d:#E8ECF3;
+  --gray:    #6B7A99;
+  --gray-l:  #A0ABBE;
+  --white:   #FFFFFF;
+  --green:   #18A058;
+  --amber:   #F59E0B;
+  --border:  #D8DFEd;
+  --shadow:  0 1px 3px rgba(10,22,40,.06), 0 4px 16px rgba(10,22,40,.08);
+  --shadow-lg: 0 8px 32px rgba(10,22,40,.12);
+  --radius:  8px;
+  --font:    'IBM Plex Sans', sans-serif;
+  --mono:    'IBM Plex Mono', monospace;
+}
 
-# ── Buscar el archivo Excel ──────────────────────────────────────────────────
-xlsx_files = glob.glob("*.xlsx") + glob.glob("*.xls")
-if not xlsx_files:
-    print("❌ No se encontró ningún archivo .xlsx en el repositorio")
-    exit(1)
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-EXCEL_PATH = xlsx_files[0]
-print(f"📂 Procesando: {EXCEL_PATH}")
+body {
+  font-family: var(--font);
+  background: var(--silver);
+  color: var(--navy);
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 1.5;
+}
 
-def safe_val(v):
-    """Convierte valores de pandas a tipos seguros para JSON."""
-    if v is None or (isinstance(v, float) and np.isnan(v)):
-        return None
-    if isinstance(v, (np.integer,)):
-        return int(v)
-    if isinstance(v, (np.floating,)):
-        return round(float(v), 4)
-    if isinstance(v, pd.Timestamp):
-        return v.strftime("%Y-%m-%d")
-    if hasattr(v, 'item'):
-        return v.item()
-    return v
+/* ── HEADER ── */
+.header {
+  background: var(--navy);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 2px solid var(--red);
+}
+.header-brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.header-logo {
+  width: 32px; height: 32px;
+  background: var(--red);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; font-size: 14px; letter-spacing: -0.5px;
+}
+.header-title {
+  color: #fff;
+  font-size: 14px; font-weight: 600; letter-spacing: 0.3px;
+}
+.header-sub {
+  color: var(--gray-l); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.8px; text-transform: uppercase;
+}
+.header-right {
+  display: flex; align-items: center; gap: 12px;
+}
+.badge-date {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  color: var(--gray-l); font-size: 11px;
+  padding: 4px 10px; border-radius: 20px;
+  font-family: var(--mono); letter-spacing: 0.5px;
+}
+.badge-live {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--green); font-size: 11px; font-weight: 500;
+}
+.badge-live::before {
+  content:''; width:7px; height:7px; border-radius:50%;
+  background: var(--green);
+  box-shadow: 0 0 0 2px rgba(24,160,88,.3);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 2px rgba(24,160,88,.3)} 50%{box-shadow:0 0 0 5px rgba(24,160,88,.1)} }
 
-def df_to_records(df):
-    """Convierte un DataFrame a lista de dicts con valores seguros."""
-    df = df.dropna(how='all').reset_index(drop=True)
-    records = []
-    for _, row in df.iterrows():
-        rec = {str(k): safe_val(v) for k, v in row.items()}
-        records.append(rec)
-    return records
+.btn-download {
+  background: var(--red);
+  color: #fff; border: none;
+  padding: 7px 16px; border-radius: var(--radius);
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background .2s;
+}
+.btn-download:hover { background: var(--red-d); }
+.btn-download svg { width:14px; height:14px; }
 
-def clean_col(col):
-    """Limpia nombre de columna."""
-    return str(col).strip().upper().replace(" ", "_").replace("/", "_")
+/* ── TABS ── */
+.tabs-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  display: flex; gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs-bar::-webkit-scrollbar { display:none; }
+.tab-btn {
+  padding: 14px 18px;
+  border: none; background: none;
+  font-family: var(--font); font-size: 12px; font-weight: 500;
+  color: var(--gray); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap; transition: all .18s;
+  display: flex; align-items: center; gap: 6px;
+}
+.tab-btn:hover { color: var(--navy); }
+.tab-btn.active { color: var(--red); border-bottom-color: var(--red); font-weight: 600; }
+.tab-icon { font-size: 14px; }
 
-# ── Leer todas las hojas ─────────────────────────────────────────────────────
-xl = pd.ExcelFile(EXCEL_PATH)
-sheet_names = xl.sheet_names
-print(f"📋 Hojas encontradas: {sheet_names}")
+/* ── MAIN ── */
+.main { padding: 24px 28px; max-width: 1440px; margin: 0 auto; }
 
-output = {
-    "meta": {
-        "archivo": EXCEL_PATH,
-        "hojas": sheet_names,
-        "actualizado": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "timestamp": int(datetime.now().timestamp())
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  transition: transform .18s, box-shadow .18s;
+  position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content:'';
+  position: absolute; top:0; left:0; right:0; height:3px;
+}
+.kpi-card.red::before   { background: var(--red); }
+.kpi-card.blue::before  { background: var(--blue-m); }
+.kpi-card.green::before { background: var(--green); }
+.kpi-card.amber::before { background: var(--amber); }
+.kpi-card.navy::before  { background: var(--navy); }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.kpi-label {
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--gray); margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 28px; font-weight: 700; line-height: 1;
+  color: var(--navy); font-family: var(--mono);
+  margin-bottom: 6px;
+}
+.kpi-sub {
+  font-size: 11px; color: var(--gray-l);
+}
+.kpi-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 12px;
+  font-size: 10px; font-weight: 600; margin-top: 4px;
+}
+.kpi-badge.ok   { background: #E8F7EF; color: var(--green); }
+.kpi-badge.warn { background: #FEF3C7; color: #B45309; }
+.kpi-badge.bad  { background: var(--red-l); color: var(--red-d); }
+
+/* ── SECTION HEADER ── */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+.section-title {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--gray);
+}
+.controls {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.ctrl-select, .ctrl-input {
+  border: 1px solid var(--border);
+  background: var(--white); border-radius: 6px;
+  padding: 5px 10px; font-family: var(--font); font-size: 12px;
+  color: var(--navy); outline: none; cursor: pointer;
+  transition: border-color .18s;
+}
+.ctrl-select:hover, .ctrl-input:hover { border-color: var(--gray); }
+.ctrl-select:focus, .ctrl-input:focus { border-color: var(--red); }
+.ctrl-input { min-width: 180px; }
+.ctrl-input::placeholder { color: var(--gray-l); }
+
+/* ── CHART CARDS ── */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+.chart-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.chart-card.wide { grid-column: 1 / -1; }
+.chart-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.chart-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--navy);
+}
+.chart-wrap { position: relative; height: 240px; }
+.chart-wrap.tall { height: 320px; }
+
+/* ── TABLE ── */
+.table-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.table-toolbar {
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap;
+}
+.table-name {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.8px; text-transform: uppercase; color: var(--navy);
+}
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px;
+}
+thead th {
+  background: var(--silver);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.7px;
+  color: var(--gray);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap; cursor: pointer;
+  user-select: none; position: sticky; top: 0;
+  transition: background .15s;
+}
+thead th:hover { background: var(--silver-d); color: var(--navy); }
+thead th .sort-icon { margin-left: 4px; opacity: .4; }
+thead th.sort-asc .sort-icon::after  { content: ' ↑'; opacity: 1; }
+thead th.sort-desc .sort-icon::after { content: ' ↓'; opacity: 1; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:hover { background: var(--silver); }
+tbody tr:last-child { border-bottom: none; }
+td { padding: 10px 14px; color: var(--navy); white-space: nowrap; }
+td.num { font-family: var(--mono); text-align: right; }
+td.pct { font-family: var(--mono); text-align: right; font-weight: 600; }
+
+/* Pills in table */
+.pill {
+  display: inline-flex; padding: 2px 8px; border-radius: 12px;
+  font-size: 10px; font-weight: 600;
+}
+.pill.ok   { background: #E8F7EF; color: var(--green); }
+.pill.warn { background: #FEF3C7; color: #B45309; }
+.pill.bad  { background: var(--red-l); color: var(--red-d); }
+
+/* Progress bar in table */
+.bar-wrap { display: flex; align-items: center; gap: 8px; }
+.bar-bg {
+  flex:1; height:6px; background: var(--silver-d);
+  border-radius: 3px; overflow: hidden; min-width: 60px;
+}
+.bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+.bar-lbl { font-family: var(--mono); font-size: 11px; font-weight: 600; min-width: 40px; text-align: right; }
+
+/* Pager */
+.pager {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--gray);
+}
+.pager-btns { display: flex; gap: 4px; }
+.pager-btn {
+  border: 1px solid var(--border); background: var(--white);
+  padding: 4px 10px; border-radius: 5px;
+  font-family: var(--font); font-size: 12px; cursor: pointer;
+  color: var(--navy); transition: all .15s;
+}
+.pager-btn:hover:not(:disabled) { background: var(--silver); }
+.pager-btn:disabled { opacity:.4; cursor:default; }
+.pager-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* ── TABS content ── */
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* ── INFO PANEL ── */
+.info-banner {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--blue-m);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  font-size: 12px; color: var(--gray);
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.info-banner svg { width:16px;height:16px;flex-shrink:0;margin-top:1px;color:var(--blue-m); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center; padding: 60px 20px;
+  color: var(--gray-l);
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 13px; }
+
+/* ── LOADING ── */
+#loading-overlay {
+  position: fixed; inset:0; background: var(--navy);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 9999;
+  transition: opacity .4s;
+}
+#loading-overlay.hidden { opacity:0; pointer-events:none; }
+.loading-logo {
+  width:56px;height:56px; background:var(--red);
+  border-radius:12px; display:flex; align-items:center;
+  justify-content:center; font-weight:700; color:#fff;
+  font-size:22px; letter-spacing:-1px; margin-bottom:20px;
+}
+.loading-msg { color: rgba(255,255,255,.6); font-size:13px; margin-top:12px; }
+.loading-bar-wrap {
+  width:200px; height:3px; background:rgba(255,255,255,.1);
+  border-radius:2px; margin-top:16px; overflow:hidden;
+}
+.loading-bar {
+  height:100%; background:var(--red); border-radius:2px;
+  animation: load-anim 1.8s ease-in-out infinite;
+}
+@keyframes load-anim { 0%{width:0;margin-left:0} 50%{width:70%;margin-left:0} 100%{width:0;margin-left:100%} }
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .main { padding: 16px; }
+  .header { padding: 0 16px; }
+  .tabs-bar { padding: 0 8px; }
+  .kpi-grid { grid-template-columns: repeat(2,1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .header-sub, .badge-live { display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-overlay">
+  <div class="loading-logo">AT</div>
+  <div style="color:#fff;font-weight:600;font-size:15px;">Informe Gerencial</div>
+  <div class="loading-msg" id="loading-msg">Cargando datos del informe...</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">AT</div>
+    <div>
+      <div class="header-title">Informe Gerencial · Fibra Canal Online</div>
+      <div class="header-sub">Mayo 2026 · Seguimiento operativo</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge-live" id="data-status">Datos en tiempo real</span>
+    <span class="badge-date" id="last-update">--</span>
+    <button class="btn-download" onclick="showDownloadMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+      </svg>
+      Descargar
+    </button>
+  </div>
+</header>
+
+<!-- Download menu (hidden) -->
+<div id="download-menu" style="display:none;position:fixed;top:56px;right:28px;z-index:200;background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:8px;min-width:180px;">
+  <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--gray);padding:4px 10px 8px;">Formato de descarga</div>
+  <button onclick="downloadPDF()" style="width:100%;text-align:left;padding:8px 12px;border:none;background:none;font-family:var(--font);font-size:13px;color:var(--navy);cursor:pointer;border-radius:5px;display:flex;gap:8px;align-items:center;" onmouseover="this.style.background='var(--silver)'" onmouseout="this.style.background='none'">📄 Exportar como PDF</button>
+  <button onclick="downloadExcel()" style="width:100%;text-align:left;padding:8px 12px;border:none;background:none;font-family:var(--font);font-size:13px;color:var(--navy);cursor:pointer;border-radius:5px;display:flex;gap:8px;align-items:center;" onmouseover="this.style.background='var(--silver)'" onmouseout="this.style.background='none'">📊 Exportar como Excel</button>
+  <button onclick="downloadJSON()" style="width:100%;text-align:left;padding:8px 12px;border:none;background:none;font-family:var(--font);font-size:13px;color:var(--navy);cursor:pointer;border-radius:5px;display:flex;gap:8px;align-items:center;" onmouseover="this.style.background='var(--silver)'" onmouseout="this.style.background='none'">🗂️ Exportar datos JSON</button>
+</div>
+
+<!-- Tabs -->
+<nav class="tabs-bar">
+  <button class="tab-btn active" onclick="setTab('resumen',this)"><span class="tab-icon">📊</span> Resumen Ejecutivo</button>
+  <button class="tab-btn" onclick="setTab('liderazgo',this)"><span class="tab-icon">👔</span> Liderazgo</button>
+  <button class="tab-btn" onclick="setTab('temporal',this)"><span class="tab-icon">📅</span> Análisis Temporal</button>
+  <button class="tab-btn" onclick="setTab('asesores',this)"><span class="tab-icon">👥</span> Asesores</button>
+  <button class="tab-btn" onclick="setTab('quiebres',this)"><span class="tab-icon">⚠️</span> Quiebres</button>
+  <button class="tab-btn" onclick="setTab('legalizaciones',this)"><span class="tab-icon">📋</span> Legalizaciones</button>
+  <button class="tab-btn" onclick="setTab('geografia',this)"><span class="tab-icon">🗺️</span> Geografía & Mix</button>
+  <button class="tab-btn" onclick="setTab('insights',this)"><span class="tab-icon">💡</span> Insights & Proyección</button>
+</nav>
+
+<!-- Main content -->
+<main class="main">
+
+  <!-- ═══ RESUMEN EJECUTIVO ═══ -->
+  <div class="tab-pane active" id="tab-resumen">
+
+    <div class="kpi-grid" id="kpi-grid">
+      <!-- populated by JS -->
+    </div>
+
+    <div class="section-head">
+      <span class="section-title">Desempeño por Regional</span>
+      <div class="controls">
+        <select class="ctrl-select" id="regional-filter" onchange="filterRegional()">
+          <option value="">Todas las regionales</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-head">
+          <span class="chart-title">Terminadas · Anuladas · Pendientes por Regional</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-regional-bar"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head">
+          <span class="chart-title">Distribución General de Estados</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <span class="section-title">Eficiencia por Regional</span>
+      <div class="controls">
+        <select class="ctrl-select" onchange="sortTable('tbl-regional',this.value)">
+          <option value="">Ordenar por...</option>
+          <option value="0">Regional ↑</option>
+          <option value="1">Total ↓</option>
+          <option value="2">Terminadas ↓</option>
+          <option value="4">Eficiencia ↓</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Tabla Regional</span>
+        <input class="ctrl-input" id="search-regional" placeholder="🔍 Buscar regional..." oninput="filterTableSearch('tbl-regional',this.value)"/>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-regional">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-regional',0)">Regional <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-regional',1)">Total <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-regional',2)">Terminadas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-regional',3)">Anuladas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-regional',4)">Pendientes <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-regional',5)">Empaquetadas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-regional',6)">Eficiencia <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-regional-body"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager-regional"></div>
+    </div>
+  </div>
+
+  <!-- ═══ LIDERAZGO ═══ -->
+  <div class="tab-pane" id="tab-liderazgo">
+
+    <div class="section-head">
+      <span class="section-title">Desempeño por Supervisor</span>
+      <div class="controls">
+        <input class="ctrl-input" id="search-sup" placeholder="🔍 Buscar supervisor..." oninput="filterTableSearch('tbl-supervisores',this.value)"/>
+        <select class="ctrl-select" onchange="sortTable('tbl-supervisores',this.value)">
+          <option value="">Ordenar...</option>
+          <option value="0">Nombre ↑</option>
+          <option value="1">Altas ↓</option>
+          <option value="2">Anuladas ↓</option>
+          <option value="3">Efectividad ↓</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card wide">
+        <div class="chart-head"><span class="chart-title">Efectividad por Supervisor</span></div>
+        <div class="chart-wrap tall"><canvas id="chart-sup-efectividad"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Supervisores / Línea</span>
+        <select class="ctrl-select" id="filter-linea" onchange="filterTableCol('tbl-supervisores',4,this.value)">
+          <option value="">Todas las líneas</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-supervisores">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-supervisores',0)">Supervisor <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-supervisores',1)">Altas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-supervisores',2)">Anuladas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-supervisores',3)">Pendientes <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-supervisores',4)">Línea <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-supervisores',5)">Efectividad <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-supervisores-body"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager-supervisores"></div>
+    </div>
+  </div>
+
+  <!-- ═══ ANÁLISIS TEMPORAL ═══ -->
+  <div class="tab-pane" id="tab-temporal">
+
+    <div class="section-head">
+      <span class="section-title">Tendencia Diaria</span>
+      <div class="controls">
+        <select class="ctrl-select" id="temporal-metric" onchange="updateTemporalChart()">
+          <option value="altas">Altas</option>
+          <option value="anuladas">Anuladas</option>
+          <option value="pendientes">Pendientes</option>
+          <option value="todos">Todos</option>
+        </select>
+        <select class="ctrl-select" id="temporal-group" onchange="updateTemporalChart()">
+          <option value="dia">Por Día</option>
+          <option value="semana">Por Semana</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card wide">
+        <div class="chart-head"><span class="chart-title">Comportamiento Operativo Temporal</span></div>
+        <div class="chart-wrap tall"><canvas id="chart-temporal-line"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Producción por Día de Registro</span></div>
+        <div class="chart-wrap"><canvas id="chart-dia-registro"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Producción por Día de Segmento</span></div>
+        <div class="chart-wrap"><canvas id="chart-dia-segmento"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ASESORES ═══ -->
+  <div class="tab-pane" id="tab-asesores">
+
+    <div class="section-head">
+      <span class="section-title">Estado de Asesores</span>
+      <div class="controls">
+        <input class="ctrl-input" id="search-asesor" placeholder="🔍 Buscar asesor..." oninput="filterTableSearch('tbl-asesores',this.value)"/>
+        <select class="ctrl-select" id="filter-asesor-estado" onchange="filterTableCol('tbl-asesores',3,this.value)">
+          <option value="">Todos los estados</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+        <select class="ctrl-select" onchange="sortTable('tbl-asesores',this.value)">
+          <option value="">Ordenar...</option>
+          <option value="0">Nombre ↑</option>
+          <option value="1">Altas ↓</option>
+          <option value="4">Efectividad ↓</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Top 10 Asesores por Efectividad</span></div>
+        <div class="chart-wrap tall"><canvas id="chart-top-asesores"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Distribución de Efectividad</span></div>
+        <div class="chart-wrap"><canvas id="chart-efectividad-dist"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Detalle de Asesores</span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-asesores">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-asesores',0)">Asesor <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-asesores',1)">Altas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-asesores',2)">Anuladas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-asesores',3)">Estado <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-asesores',4)">Efectividad <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-asesores',5)">Supervisor <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-asesores-body"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager-asesores"></div>
+    </div>
+  </div>
+
+  <!-- ═══ QUIEBRES ═══ -->
+  <div class="tab-pane" id="tab-quiebres">
+
+    <div class="section-head">
+      <span class="section-title">Análisis de Cancelaciones y Quiebres</span>
+      <div class="controls">
+        <select class="ctrl-select" id="filter-motivo" onchange="filterTableCol('tbl-quiebres',1,this.value)">
+          <option value="">Todos los motivos</option>
+        </select>
+        <select class="ctrl-select" onchange="sortTable('tbl-quiebres',this.value)">
+          <option value="">Ordenar...</option>
+          <option value="2">Impacto ↓</option>
+          <option value="1">Motivo ↑</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Motivos de Quiebre / Cancelación</span></div>
+        <div class="chart-wrap"><canvas id="chart-quiebres-motivo"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Atribución por Supervisor</span></div>
+        <div class="chart-wrap"><canvas id="chart-quiebres-sup"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Detalle de Quiebres</span>
+        <input class="ctrl-input" id="search-quiebres" placeholder="🔍 Buscar..." oninput="filterTableSearch('tbl-quiebres',this.value)"/>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-quiebres">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-quiebres',0)">Asesor <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-quiebres',1)">Motivo <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-quiebres',2)">Impacto <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-quiebres',3)">Supervisor <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-quiebres',4)">Fecha <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-quiebres-body"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager-quiebres"></div>
+    </div>
+  </div>
+
+  <!-- ═══ LEGALIZACIONES ═══ -->
+  <div class="tab-pane" id="tab-legalizaciones">
+
+    <div class="section-head">
+      <span class="section-title">Embudo de Legalizaciones</span>
+      <div class="controls">
+        <select class="ctrl-select" id="filter-legaliz-estado" onchange="filterTableCol('tbl-legalizaciones',2,this.value)">
+          <option value="">Todos los estados</option>
+        </select>
+        <select class="ctrl-select" onchange="sortTable('tbl-legalizaciones',this.value)">
+          <option value="">Ordenar...</option>
+          <option value="3">Días mora ↓</option>
+          <option value="4">Pago ↓</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Estados de Legalizaciones</span></div>
+        <div class="chart-wrap"><canvas id="chart-legaliz-estado"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Pagos Recibidos (% del Total)</span></div>
+        <div class="chart-wrap"><canvas id="chart-legaliz-pagos"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Control de Legalizaciones</span>
+        <input class="ctrl-input" placeholder="🔍 Buscar..." oninput="filterTableSearch('tbl-legalizaciones',this.value)"/>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-legalizaciones">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-legalizaciones',0)">ID / Contrato <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-legalizaciones',1)">Asesor <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-legalizaciones',2)">Estado <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-legalizaciones',3)">Días Mora <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-legalizaciones',4)">Pago Recibido <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-legalizaciones',5)">% Pago <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-legalizaciones-body"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager-legalizaciones"></div>
+    </div>
+  </div>
+
+  <!-- ═══ GEOGRAFÍA & MIX ═══ -->
+  <div class="tab-pane" id="tab-geografia">
+
+    <div class="section-head">
+      <span class="section-title">Despliegue Geográfico y Mix de Producto</span>
+      <div class="controls">
+        <select class="ctrl-select" id="filter-depto" onchange="filterTableCol('tbl-geografia',1,this.value)">
+          <option value="">Todos los departamentos</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Efectividad por Departamento</span></div>
+        <div class="chart-wrap tall"><canvas id="chart-geo-depto"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Mix de Productos (Empaquetados)</span></div>
+        <div class="chart-wrap"><canvas id="chart-mix-producto"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Detalle Geográfico</span>
+        <input class="ctrl-input" placeholder="🔍 Buscar localidad..." oninput="filterTableSearch('tbl-geografia',this.value)"/>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-geografia">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-geografia',0)">Localidad <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-geografia',1)">Departamento <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-geografia',2)">Ventas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-geografia',3)">Efectividad <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-geografia-body"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager-geografia"></div>
+    </div>
+  </div>
+
+  <!-- ═══ INSIGHTS & PROYECCIÓN ═══ -->
+  <div class="tab-pane" id="tab-insights">
+
+    <div class="chart-grid">
+      <div class="chart-card wide">
+        <div class="chart-head"><span class="chart-title">Proyección de Cierre del Mes</span></div>
+        <div class="chart-wrap"><canvas id="chart-proyeccion"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:8px;">
+      <span class="section-title">Focos de Atención · Supervisores</span>
+    </div>
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Supervisores Foco (Requieren Intervención)</span>
+        <select class="ctrl-select" onchange="sortTable('tbl-focos-sup',this.value)">
+          <option value="">Ordenar...</option>
+          <option value="2">Efectividad ↑</option>
+          <option value="1">Anuladas ↓</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-focos-sup">
+          <thead>
+            <tr>
+              <th>Supervisor</th>
+              <th onclick="sortTable('tbl-focos-sup',1)">Anuladas <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-focos-sup',2)">Efectividad <span class="sort-icon"></span></th>
+              <th>Acción Sugerida</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-focos-sup-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:20px;">
+      <span class="section-title">Focos de Atención · Asesores</span>
+    </div>
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-name">Asesores Foco (Requieren Plan de Trabajo)</span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-focos-asesor">
+          <thead>
+            <tr>
+              <th>Asesor</th>
+              <th onclick="sortTable('tbl-focos-asesor',1)">Efectividad <span class="sort-icon"></span></th>
+              <th onclick="sortTable('tbl-focos-asesor',2)">Anuladas <span class="sort-icon"></span></th>
+              <th>Supervisor</th>
+              <th>Recomendación</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-focos-asesor-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="insights-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:24px;"></div>
+  </div>
+
+</main>
+
+<!-- Script data -->
+<script src="data.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// INFORME GERENCIAL · FIBRA CANAL ONLINE
+// Motor principal del dashboard
+// ═══════════════════════════════════════════════════════════════
+
+const COLORS = {
+  red:    '#E8232A', redL: '#FDEAEA', redD: '#B81920',
+  navy:   '#0A1628', blue: '#1A3A6B', blueM:'#1E4D8C',
+  green:  '#18A058', greenL:'#E8F7EF',
+  amber:  '#F59E0B', amberL:'#FEF3C7',
+  gray:   '#6B7A99', grayL:'#A0ABBE',
+  white:  '#FFFFFF', silver:'#F4F6FA',
+};
+const PALETTE = [
+  COLORS.blueM, COLORS.red, COLORS.amber, COLORS.green,
+  '#6366F1','#EC4899','#14B8A6','#F97316','#8B5CF6','#06B6D4'
+];
+
+// ── Estado global ────────────────────────────────────────────
+let DATA = null;
+let charts = {};
+const PAGE_SIZE = 15;
+const tableState = {};
+
+// ── Charts.js defaults ───────────────────────────────────────
+Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = COLORS.gray;
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.padding = 16;
+
+// ─────────────────────────────────────────────────────────────
+// INICIALIZACIÓN
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  msg('Inicializando dashboard...');
+  setTimeout(initDashboard, 300);
+});
+
+window.addEventListener('datosActualizados', (e) => {
+  DATA = e.detail;
+  renderAll();
+});
+
+function initDashboard() {
+  // Intentar usar INFORME_DATA si existe (data.js cargado)
+  if (typeof INFORME_DATA !== 'undefined') {
+    DATA = INFORME_DATA;
+    msg('Renderizando visualizaciones...');
+    setTimeout(() => { renderAll(); hideLoading(); }, 400);
+  } else {
+    // Sin data.js → generar datos demo completos
+    msg('Generando datos demo (sube el Excel para datos reales)...');
+    DATA = generateDemoData();
+    setTimeout(() => { renderAll(); hideLoading(); }, 600);
+  }
+}
+
+function hideLoading() {
+  const ol = document.getElementById('loading-overlay');
+  ol.classList.add('hidden');
+  setTimeout(() => ol.style.display = 'none', 500);
+}
+function msg(t) {
+  const el = document.getElementById('loading-msg');
+  if(el) el.textContent = t;
+}
+
+// ─────────────────────────────────────────────────────────────
+// DATOS DEMO COMPLETOS
+// ─────────────────────────────────────────────────────────────
+function generateDemoData() {
+  const regionales = ['BOGOTÁ','CARIBE','NOROCCIDENTE','ORIENTE','SUR'];
+  const supervisores = [
+    'Martínez, Laura','Gómez, Carlos','Pérez, Ana','López, Juan','Rodríguez, María',
+    'García, Pedro','Hernández, Diana','Jiménez, Felipe','Torres, Sandra','Vargas, Luis'
+  ];
+  const lineas = ['TRÍOS','BANDA ANCHA','DÚOS','FIBRA PURA'];
+  const motivos = ['CLIENTE NO ACEPTA PRECIO','SIN COBERTURA','DUPLICADO','DATO ERRADO','CLIENTE DESISTE','AGENDAMIENTO FALLIDO'];
+  const productos = ['TRÍO PLUS','BANDA ANCHA 300','DÚO ESENCIAL','FIBRA 500','TRÍO BÁSICO','BANDA ANCHA 100'];
+
+  // Regionales
+  const resumenData = regionales.map(r => ({
+    REGIONAL: r,
+    TOTAL: Math.floor(Math.random()*250)+100,
+    TERMINADAS: Math.floor(Math.random()*180)+60,
+    ANULADAS: Math.floor(Math.random()*60)+20,
+    PENDIENTES: Math.floor(Math.random()*50)+10,
+    EMPAQUETADAS: Math.floor(Math.random()*30)+5,
+  })).map(r => ({
+    ...r,
+    EFICIENCIA: parseFloat((r.TERMINADAS/(r.TERMINADAS+r.ANULADAS)*100).toFixed(1))
+  }));
+
+  // Supervisores
+  const supData = supervisores.map((s,i) => {
+    const altas = Math.floor(Math.random()*120)+30;
+    const anuladas = Math.floor(Math.random()*40)+5;
+    return {
+      SUPERVISOR: s,
+      ALTAS: altas,
+      ANULADAS: anuladas,
+      PENDIENTES: Math.floor(Math.random()*25)+3,
+      LINEA: lineas[i % lineas.length],
+      EFECTIVIDAD: parseFloat((altas/(altas+anuladas)*100).toFixed(1))
+    };
+  });
+
+  // Temporal (30 días)
+  const days = Array.from({length:24}, (_,i) => ({
+    DIA: i+1,
+    FECHA: `2026-05-${String(i+1).padStart(2,'0')}`,
+    ALTAS: Math.floor(Math.random()*60)+20,
+    ANULADAS: Math.floor(Math.random()*20)+3,
+    PENDIENTES: Math.floor(Math.random()*15)+2,
+  }));
+
+  // Asesores
+  const nombres = [
+    'Acosta, Rosa','Benavides, Jorge','Castro, Claudia','Díaz, Miguel','Espinosa, Patricia',
+    'Fuentes, Andrés','González, Isabel','Herrera, David','Ibáñez, Carmen','Jiménez, Oscar',
+    'Krause, Viviana','Lara, Camilo','Mora, Luisa','Núñez, Ernesto','Ortega, Adriana',
+    'Pabón, Julián','Quintero, Natalia','Reyes, Roberto','Suárez, Leidy','Torres, Víctor',
+    'Uribe, Paola','Valencia, Sebastián','Wilches, Marcela','Zárate, Daniel','Álvarez, Gloria'
+  ];
+  const asesorData = nombres.map((n,i) => {
+    const altas = Math.floor(Math.random()*80)+5;
+    const anuladas = Math.floor(Math.random()*30)+1;
+    return {
+      ASESOR: n,
+      ALTAS: altas,
+      ANULADAS: anuladas,
+      ESTADO: Math.random()>.15 ? 'ACTIVO' : 'INACTIVO',
+      EFECTIVIDAD: parseFloat((altas/(altas+anuladas)*100).toFixed(1)),
+      SUPERVISOR: supervisores[i % supervisores.length]
+    };
+  });
+
+  // Quiebres
+  const quiebresData = Array.from({length:40}, (_,i) => ({
+    ASESOR: nombres[i % nombres.length],
+    MOTIVO: motivos[Math.floor(Math.random()*motivos.length)],
+    IMPACTO: Math.floor(Math.random()*5)+1,
+    SUPERVISOR: supervisores[Math.floor(Math.random()*supervisores.length)],
+    FECHA: `2026-05-${String(Math.floor(Math.random()*13)+1).padStart(2,'0')}`,
+  }));
+
+  // Legalizaciones
+  const legalizEstados = ['PAGADO','PENDIENTE','MORA'];
+  const legalizData = Array.from({length:50}, (_,i) => {
+    const estado = legalizEstados[Math.floor(Math.random()*3)];
+    const pago = estado==='PAGADO' ? Math.floor(Math.random()*300000)+80000 : Math.floor(Math.random()*150000);
+    const total = Math.floor(Math.random()*200000)+100000;
+    const mora = estado==='MORA' ? Math.floor(Math.random()*30)+1 : (estado==='PENDIENTE' ? Math.floor(Math.random()*15) : 0);
+    return {
+      CONTRATO: `FBR-${String(i+1001).padStart(5,'0')}`,
+      ASESOR: nombres[i % nombres.length],
+      ESTADO: estado,
+      DIAS_MORA: mora,
+      PAGO_RECIBIDO: pago,
+      PCT_PAGO: parseFloat((pago/total*100).toFixed(1)),
+    };
+  });
+
+  // Geografía
+  const deptos = ['CUNDINAMARCA','ANTIOQUIA','VALLE','ATLÁNTICO','SANTANDER','BOLÍVAR','NARIÑO'];
+  const geoData = deptos.flatMap(d =>
+    Array.from({length:3},(_,j) => {
+      const ventas = Math.floor(Math.random()*80)+10;
+      const anuladas = Math.floor(Math.random()*20)+2;
+      return {
+        LOCALIDAD: `${d.substring(0,3)}-${j+1}`,
+        DEPARTAMENTO: d,
+        VENTAS: ventas,
+        EFECTIVIDAD: parseFloat((ventas/(ventas+anuladas)*100).toFixed(1))
+      };
+    })
+  );
+
+  // Mix
+  const mixData = productos.map(p => ({
+    PRODUCTO: p,
+    CANTIDAD: Math.floor(Math.random()*200)+30,
+    PCT: 0
+  }));
+  const totalMix = mixData.reduce((a,b)=>a+b.CANTIDAD,0);
+  mixData.forEach(m => m.PCT = parseFloat((m.CANTIDAD/totalMix*100).toFixed(1)));
+
+  return {
+    meta: { actualizado: new Date().toLocaleString('es-CO'), archivo: 'DEMO', hojas: [] },
+    metricas: {
+      total_altas: 650,
+      total_anuladas: 171,
+      total_pendientes: 188,
+      efectividad_global: 79.2
     },
-    "hojas": {}
+    hojas: {
+      resumen: resumenData,
+      liderazgo: supData,
+      temporal: days,
+      asesores: asesorData,
+      quiebres: quiebresData,
+      legalizaciones: legalizData,
+      geografia: geoData,
+      mix: mixData
+    }
+  };
 }
 
-# Mapeo de nombres de hoja a claves del dashboard
-HOJA_MAP = {
-    # Ajusta estos nombres según tus hojas reales
-    "RESUMEN": "resumen",
-    "LIDERAZGO": "liderazgo",
-    "SUPERVISORES": "liderazgo",
-    "TEMPORAL": "temporal",
-    "DIARIO": "temporal",
-    "ASESORES": "asesores",
-    "AGENTES": "asesores",
-    "QUIEBRES": "quiebres",
-    "CANCELACIONES": "quiebres",
-    "LEGALIZACIONES": "legalizaciones",
-    "LEGALIZ": "legalizaciones",
-    "AGENDA": "agenda",
-    "AGENDAS": "agenda",
-    "GEO": "geografia",
-    "GEOGRAFIA": "geografia",
-    "DEPARTAMENTOS": "geografia",
-    "MIX": "mix",
-    "PRODUCTOS": "mix",
-    "EMPAQUETADOS": "mix",
-    "INSIGHTS": "insights",
-    "PROYECCION": "insights",
+// ─────────────────────────────────────────────────────────────
+// RENDER ALL
+// ─────────────────────────────────────────────────────────────
+function renderAll() {
+  if(!DATA) return;
+  updateMeta();
+  renderKPIs();
+  renderResumen();
+  renderLiderazgo();
+  renderTemporal();
+  renderAsesores();
+  renderQuiebres();
+  renderLegalizaciones();
+  renderGeografia();
+  renderInsights();
 }
 
-for sheet in sheet_names:
-    try:
-        df = xl.parse(sheet, header=0)
-        df.columns = [clean_col(c) for c in df.columns]
-        records = df_to_records(df)
-        
-        # Determinar clave normalizada
-        clave = None
-        sheet_upper = sheet.upper().strip()
-        for k, v in HOJA_MAP.items():
-            if k in sheet_upper:
-                clave = v
-                break
-        if not clave:
-            clave = re.sub(r'[^A-Z0-9]', '_', sheet_upper).lower()
-        
-        # Si ya existe la clave, fusionar
-        if clave in output["hojas"] and isinstance(output["hojas"][clave], list):
-            output["hojas"][clave].extend(records)
-        else:
-            output["hojas"][clave] = records
-        
-        print(f"  ✅ {sheet} → [{clave}] {len(records)} filas")
-    except Exception as e:
-        print(f"  ⚠️  Error en hoja '{sheet}': {e}")
+function updateMeta() {
+  const meta = DATA.meta || {};
+  const el = document.getElementById('last-update');
+  if(el) el.textContent = meta.actualizado ? `Datos: ${meta.actualizado}` : 'Sin fecha';
+}
 
-# ── Calcular métricas globales desde los datos ───────────────────────────────
-def calc_metricas(hojas):
-    metricas = {}
-    
-    # Intentar extraer métricas del resumen si existe
-    resumen = hojas.get("resumen", [])
-    if resumen:
-        # Buscar columnas numéricas típicas
-        for row in resumen:
-            for k, v in row.items():
-                if v is not None and isinstance(v, (int, float)):
-                    key_lower = k.lower()
-                    if "alta" in key_lower or "terminad" in key_lower:
-                        metricas["total_altas"] = metricas.get("total_altas", 0) + v
-                    if "anulad" in key_lower or "cancel" in key_lower:
-                        metricas["total_anuladas"] = metricas.get("total_anuladas", 0) + v
-                    if "pendient" in key_lower:
-                        metricas["total_pendientes"] = metricas.get("total_pendientes", 0) + v
-    
-    # Calcular efectividad global
-    altas = metricas.get("total_altas", 0)
-    anuladas = metricas.get("total_anuladas", 0)
-    if (altas + anuladas) > 0:
-        metricas["efectividad_global"] = round(altas / (altas + anuladas) * 100, 1)
-    
-    return metricas
+// ─────────────────────────────────────────────────────────────
+// KPIs
+// ─────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const m = DATA.metricas || {};
+  const resumen = DATA.hojas?.resumen || [];
 
-output["metricas"] = calc_metricas(output["hojas"])
+  const totalOrdenes = resumen.reduce((s,r)=>s+(r.TOTAL||0), 0) || 1009;
+  const terminadas = m.total_altas || resumen.reduce((s,r)=>s+(r.TERMINADAS||0),0) || 650;
+  const anuladas = m.total_anuladas || resumen.reduce((s,r)=>s+(r.ANULADAS||0),0) || 171;
+  const pendientes = m.total_pendientes || resumen.reduce((s,r)=>s+(r.PENDIENTES||0),0) || 188;
+  const empaquetadas = resumen.reduce((s,r)=>s+(r.EMPAQUETADAS||0),0) || 42;
+  const efectividad = m.efectividad_global || parseFloat((terminadas/(terminadas+anuladas)*100).toFixed(1));
+  const diasRestantes = 24 - (new Date().getDate() > 24 ? 24 : new Date().getDate());
+  const ritmo = Math.floor(terminadas / 13);
+  const proyeccion = Math.floor(terminadas + ritmo * Math.max(diasRestantes,0));
 
-# ── Guardar como data.js ─────────────────────────────────────────────────────
-json_str = json.dumps(output, ensure_ascii=False, indent=2)
-js_content = f"""// ⚡ AUTO-GENERADO por GitHub Actions — NO EDITAR MANUALMENTE
-// Última actualización: {output['meta']['actualizado']}
-// Archivo fuente: {EXCEL_PATH}
+  const asesores = DATA.hojas?.asesores || [];
+  const totalAsesores = asesores.filter(a=>a.ESTADO==='ACTIVO'||!a.ESTADO).length || 100;
 
-const INFORME_DATA = {json_str};
+  const kpis = [
+    { label:'Total Órdenes', value: totalOrdenes.toLocaleString(), sub:'en seguimiento activo', color:'navy' },
+    { label:'Terminadas (Altas)', value: terminadas.toLocaleString(), sub:`${(terminadas/totalOrdenes*100).toFixed(1)}% del total`, badge:'En meta', badgeClass:'ok', color:'blue' },
+    { label:'Anuladas', value: anuladas.toLocaleString(), sub:`${(anuladas/totalOrdenes*100).toFixed(1)}% del total`, badge:'Monitorear', badgeClass:'warn', color:'red' },
+    { label:'Pendientes', value: pendientes.toLocaleString(), sub:`${(pendientes/totalOrdenes*100).toFixed(1)}% del total`, badge:`${diasRestantes} días restantes`, badgeClass:'warn', color:'amber' },
+    { label:'Empaquetadas', value: empaquetadas.toLocaleString(), sub:'TRÍO / Convergente', color:'navy' },
+    { label:'Eficiencia Global', value: `${efectividad}%`, sub:'Altas / (Altas + Anuladas)', badge:`Meta: 85%`, badgeClass: efectividad>=85?'ok':'warn', color:'green' },
+    { label:'Proyección Mes', value: proyeccion.toLocaleString(), sub:`Estimado cierre mayo`, badge:`Ritmo: ${ritmo}/día`, badgeClass:'ok', color:'blue' },
+    { label:'Asesores Planta', value: totalAsesores.toLocaleString(), sub:`Activos al ${new Date().getDate()}-may`, color:'navy' },
+  ];
 
-// Emitir evento para que el dashboard se actualice
-if (typeof window !== 'undefined') {{
-  window.dispatchEvent(new CustomEvent('datosActualizados', {{ detail: INFORME_DATA }}));
-}}
-"""
+  const grid = document.getElementById('kpi-grid');
+  grid.innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.color}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      ${k.badge ? `<div><span class="kpi-badge ${k.badgeClass}">${k.badge}</span></div>` : ''}
+    </div>
+  `).join('');
+}
 
-with open("data.js", "w", encoding="utf-8") as f:
-    f.write(js_content)
+// ─────────────────────────────────────────────────────────────
+// RESUMEN
+// ─────────────────────────────────────────────────────────────
+function renderResumen() {
+  const rows = DATA.hojas?.resumen || [];
+  if(!rows.length) return;
 
-print(f"\n✅ data.js generado exitosamente")
-print(f"   Hojas procesadas: {list(output['hojas'].keys())}")
-print(f"   Tamaño: {len(js_content):,} bytes")
+  // Populate regional filter
+  const sel = document.getElementById('regional-filter');
+  const regs = [...new Set(rows.map(r=>r.REGIONAL).filter(Boolean))];
+  sel.innerHTML = '<option value="">Todas las regionales</option>' + regs.map(r=>`<option>${r}</option>`).join('');
+
+  // Bar chart
+  destroyChart('chart-regional-bar');
+  charts['chart-regional-bar'] = new Chart(document.getElementById('chart-regional-bar'), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r=>r.REGIONAL||'–'),
+      datasets: [
+        { label:'Terminadas', data: rows.map(r=>r.TERMINADAS||0), backgroundColor: COLORS.blueM, borderRadius:4 },
+        { label:'Anuladas',   data: rows.map(r=>r.ANULADAS||0),   backgroundColor: COLORS.red,   borderRadius:4 },
+        { label:'Pendientes', data: rows.map(r=>r.PENDIENTES||0), backgroundColor: COLORS.amber,  borderRadius:4 },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{
+      x:{stacked:false,grid:{display:false}},
+      y:{grid:{color:'rgba(0,0,0,.05)'}}
+    }, plugins:{legend:{position:'top'}}}
+  });
+
+  // Donut
+  const totTerminadas = rows.reduce((s,r)=>s+(r.TERMINADAS||0),0);
+  const totAnuladas   = rows.reduce((s,r)=>s+(r.ANULADAS||0),0);
+  const totPendientes = rows.reduce((s,r)=>s+(r.PENDIENTES||0),0);
+  destroyChart('chart-donut');
+  charts['chart-donut'] = new Chart(document.getElementById('chart-donut'),{
+    type:'doughnut',
+    data:{
+      labels:['Terminadas','Anuladas','Pendientes'],
+      datasets:[{data:[totTerminadas,totAnuladas,totPendientes],
+        backgroundColor:[COLORS.blueM,COLORS.red,COLORS.amber],
+        borderWidth:0, hoverOffset:8
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom'}}}
+  });
+
+  // Table
+  initTable('tbl-regional', rows, (r) => [
+    r.REGIONAL||'–',
+    r.TOTAL||0,
+    r.TERMINADAS||0,
+    r.ANULADAS||0,
+    r.PENDIENTES||0,
+    r.EMPAQUETADAS||0,
+    r.EFICIENCIA||0,
+  ], (cells) => `
+    <td>${cells[0]}</td>
+    <td class="num">${cells[1].toLocaleString()}</td>
+    <td class="num">${cells[2].toLocaleString()}</td>
+    <td class="num">${cells[3].toLocaleString()}</td>
+    <td class="num">${cells[4].toLocaleString()}</td>
+    <td class="num">${cells[5].toLocaleString()}</td>
+    <td>${pctBar(cells[6],85)}</td>
+  `);
+}
+
+function filterRegional() {
+  const val = document.getElementById('regional-filter').value;
+  filterTableCol('tbl-regional', 0, val);
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIDERAZGO
+// ─────────────────────────────────────────────────────────────
+function renderLiderazgo() {
+  const rows = DATA.hojas?.liderazgo || [];
+  if(!rows.length) return;
+
+  // Populate linea filter
+  const selLinea = document.getElementById('filter-linea');
+  const lineas = [...new Set(rows.map(r=>r.LINEA).filter(Boolean))];
+  selLinea.innerHTML = '<option value="">Todas las líneas</option>' + lineas.map(l=>`<option>${l}</option>`).join('');
+
+  const sorted = [...rows].sort((a,b)=>(b.EFECTIVIDAD||0)-(a.EFECTIVIDAD||0)).slice(0,10);
+
+  destroyChart('chart-sup-efectividad');
+  charts['chart-sup-efectividad'] = new Chart(document.getElementById('chart-sup-efectividad'),{
+    type:'bar',
+    data:{
+      labels: sorted.map(r=>r.SUPERVISOR||'–'),
+      datasets:[
+        {label:'Efectividad (%)', data: sorted.map(r=>r.EFECTIVIDAD||0), backgroundColor: sorted.map(r=>(r.EFECTIVIDAD||0)>=80?COLORS.blueM:COLORS.amber), borderRadius:4, yAxisID:'y1'},
+        {label:'Altas', data: sorted.map(r=>r.ALTAS||0), backgroundColor:'rgba(26,58,107,.15)', borderRadius:4, yAxisID:'y2'},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{grid:{display:false}},
+        y1:{type:'linear',position:'left',min:0,max:100,grid:{color:'rgba(0,0,0,.05)'},title:{display:true,text:'Efectividad (%)'}},
+        y2:{type:'linear',position:'right',grid:{display:false},title:{display:true,text:'Altas'}},
+      },
+      plugins:{legend:{position:'top'}}
+    }
+  });
+
+  initTable('tbl-supervisores', rows, r=>[
+    r.SUPERVISOR||'–',
+    r.ALTAS||0,
+    r.ANULADAS||0,
+    r.PENDIENTES||0,
+    r.LINEA||'–',
+    r.EFECTIVIDAD||0,
+  ], (cells) => `
+    <td>${cells[0]}</td>
+    <td class="num">${cells[1]}</td>
+    <td class="num">${cells[2]}</td>
+    <td class="num">${cells[3]}</td>
+    <td>${cells[4]}</td>
+    <td>${pctBar(cells[5],80)}</td>
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────
+// TEMPORAL
+// ─────────────────────────────────────────────────────────────
+function renderTemporal() {
+  const rows = (DATA.hojas?.temporal || []).sort((a,b)=>(a.DIA||0)-(b.DIA||0));
+  if(!rows.length) return;
+  updateTemporalChart();
+
+  // Día de registro (simulate with same data)
+  destroyChart('chart-dia-registro');
+  charts['chart-dia-registro'] = new Chart(document.getElementById('chart-dia-registro'),{
+    type:'bar',
+    data:{
+      labels: rows.map(r=>`Día ${r.DIA}`),
+      datasets:[{label:'Altas', data:rows.map(r=>r.ALTAS||0), backgroundColor:COLORS.blueM, borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'}}},plugins:{legend:{display:false}}}
+  });
+
+  // Día segmento
+  const dayNames = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const bySegmento = Array(7).fill(0);
+  rows.forEach((r,i) => { bySegmento[i%7] += (r.ALTAS||0); });
+  destroyChart('chart-dia-segmento');
+  charts['chart-dia-segmento'] = new Chart(document.getElementById('chart-dia-segmento'),{
+    type:'bar',
+    data:{labels:dayNames,datasets:[{label:'Promedio Altas', data:bySegmento.map(v=>Math.round(v/(Math.ceil(rows.length/7)||1))), backgroundColor:PALETTE.slice(0,7), borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'}}},plugins:{legend:{display:false}}}
+  });
+}
+
+function updateTemporalChart() {
+  const rows = (DATA.hojas?.temporal || []).sort((a,b)=>(a.DIA||0)-(b.DIA||0));
+  const metric = document.getElementById('temporal-metric')?.value || 'altas';
+  const group  = document.getElementById('temporal-group')?.value || 'dia';
+
+  let labels, datasets;
+  if(group === 'dia') {
+    labels = rows.map(r => `D${r.DIA}`);
+    if(metric === 'todos') {
+      datasets = [
+        {label:'Altas',      data:rows.map(r=>r.ALTAS||0),      borderColor:COLORS.blueM, backgroundColor:'rgba(30,77,140,.1)', fill:true, tension:.4},
+        {label:'Anuladas',   data:rows.map(r=>r.ANULADAS||0),   borderColor:COLORS.red,   backgroundColor:'rgba(232,35,42,.1)',  fill:true, tension:.4},
+        {label:'Pendientes', data:rows.map(r=>r.PENDIENTES||0), borderColor:COLORS.amber,  backgroundColor:'rgba(245,158,11,.1)', fill:true, tension:.4},
+      ];
+    } else {
+      const key = metric.toUpperCase();
+      datasets = [{label: metric, data: rows.map(r=>r[key]||0), borderColor:COLORS.blueM, backgroundColor:'rgba(30,77,140,.1)', fill:true, tension:.4}];
+    }
+  } else {
+    // Semanal
+    const weeks = {};
+    rows.forEach(r => {
+      const w = `S${Math.ceil((r.DIA||1)/7)}`;
+      if(!weeks[w]) weeks[w] = {altas:0,anuladas:0,pendientes:0};
+      weeks[w].altas += r.ALTAS||0;
+      weeks[w].anuladas += r.ANULADAS||0;
+      weeks[w].pendientes += r.PENDIENTES||0;
+    });
+    labels = Object.keys(weeks);
+    if(metric==='todos') {
+      datasets = [
+        {label:'Altas',      data:labels.map(w=>weeks[w].altas),      borderColor:COLORS.blueM, backgroundColor:'rgba(30,77,140,.1)', fill:true, tension:.4},
+        {label:'Anuladas',   data:labels.map(w=>weeks[w].anuladas),   borderColor:COLORS.red,   backgroundColor:'rgba(232,35,42,.1)',  fill:true, tension:.4},
+        {label:'Pendientes', data:labels.map(w=>weeks[w].pendientes), borderColor:COLORS.amber,  backgroundColor:'rgba(245,158,11,.1)', fill:true, tension:.4},
+      ];
+    } else {
+      datasets = [{label:metric, data:labels.map(w=>weeks[w][metric]||0), borderColor:COLORS.blueM, backgroundColor:'rgba(30,77,140,.1)', fill:true, tension:.4}];
+    }
+  }
+
+  destroyChart('chart-temporal-line');
+  charts['chart-temporal-line'] = new Chart(document.getElementById('chart-temporal-line'),{
+    type:'line',
+    data:{ labels, datasets },
+    options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'}}},
+      plugins:{legend:{position:'top'}}
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// ASESORES
+// ─────────────────────────────────────────────────────────────
+function renderAsesores() {
+  const rows = DATA.hojas?.asesores || [];
+  if(!rows.length) return;
+
+  const sorted = [...rows].sort((a,b)=>(b.EFECTIVIDAD||0)-(a.EFECTIVIDAD||0));
+  const top10 = sorted.slice(0,10);
+
+  destroyChart('chart-top-asesores');
+  charts['chart-top-asesores'] = new Chart(document.getElementById('chart-top-asesores'),{
+    type:'bar',
+    data:{
+      labels: top10.map(r=>r.ASESOR?.split(',')[0]||'–'),
+      datasets:[{label:'Efectividad (%)', data:top10.map(r=>r.EFECTIVIDAD||0), backgroundColor:top10.map(r=>(r.EFECTIVIDAD||0)>=80?COLORS.blueM:COLORS.amber), borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{min:0,max:100,grid:{color:'rgba(0,0,0,.05)'}},y:{grid:{display:false}}},plugins:{legend:{display:false}}}
+  });
+
+  // Distribution
+  const buckets = [0,0,0,0,0]; // <50, 50-65, 65-80, 80-90, >90
+  rows.forEach(r => {
+    const e = r.EFECTIVIDAD||0;
+    if(e<50) buckets[0]++;
+    else if(e<65) buckets[1]++;
+    else if(e<80) buckets[2]++;
+    else if(e<90) buckets[3]++;
+    else buckets[4]++;
+  });
+  destroyChart('chart-efectividad-dist');
+  charts['chart-efectividad-dist'] = new Chart(document.getElementById('chart-efectividad-dist'),{
+    type:'bar',
+    data:{
+      labels:['<50%','50–65%','65–80%','80–90%','>90%'],
+      datasets:[{label:'Asesores', data:buckets, backgroundColor:[COLORS.red,COLORS.amber,'#F97316',COLORS.blueM,COLORS.green], borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'}}},plugins:{legend:{display:false}}}
+  });
+
+  initTable('tbl-asesores', rows, r=>[
+    r.ASESOR||'–', r.ALTAS||0, r.ANULADAS||0, r.ESTADO||'ACTIVO', r.EFECTIVIDAD||0, r.SUPERVISOR||'–'
+  ], (cells) => `
+    <td>${cells[0]}</td>
+    <td class="num">${cells[1]}</td>
+    <td class="num">${cells[2]}</td>
+    <td><span class="pill ${cells[3]==='ACTIVO'?'ok':'bad'}">${cells[3]}</span></td>
+    <td>${pctBar(cells[4],80)}</td>
+    <td>${cells[5]}</td>
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────
+// QUIEBRES
+// ─────────────────────────────────────────────────────────────
+function renderQuiebres() {
+  const rows = DATA.hojas?.quiebres || [];
+  if(!rows.length) return;
+
+  // Motivos
+  const motivoCount = {};
+  rows.forEach(r => {
+    const m = r.MOTIVO||'OTRO';
+    motivoCount[m] = (motivoCount[m]||0) + (r.IMPACTO||1);
+  });
+  const sortedMotivos = Object.entries(motivoCount).sort((a,b)=>b[1]-a[1]);
+
+  const selMotivo = document.getElementById('filter-motivo');
+  selMotivo.innerHTML = '<option value="">Todos los motivos</option>' + sortedMotivos.map(([m])=>`<option>${m}</option>`).join('');
+
+  destroyChart('chart-quiebres-motivo');
+  charts['chart-quiebres-motivo'] = new Chart(document.getElementById('chart-quiebres-motivo'),{
+    type:'doughnut',
+    data:{labels:sortedMotivos.map(([k])=>k),datasets:[{data:sortedMotivos.map(([,v])=>v),backgroundColor:PALETTE,borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{boxWidth:10}}}}
+  });
+
+  // Por supervisor
+  const supCount = {};
+  rows.forEach(r => { const s=r.SUPERVISOR||'OTRO'; supCount[s]=(supCount[s]||0)+(r.IMPACTO||1); });
+  const sortedSup = Object.entries(supCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  destroyChart('chart-quiebres-sup');
+  charts['chart-quiebres-sup'] = new Chart(document.getElementById('chart-quiebres-sup'),{
+    type:'bar',
+    data:{labels:sortedSup.map(([k])=>k.split(',')[0]),datasets:[{label:'Impacto',data:sortedSup.map(([,v])=>v),backgroundColor:COLORS.red,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{grid:{color:'rgba(0,0,0,.05)'}},y:{grid:{display:false}}},plugins:{legend:{display:false}}}
+  });
+
+  initTable('tbl-quiebres', rows, r=>[
+    r.ASESOR||'–', r.MOTIVO||'–', r.IMPACTO||0, r.SUPERVISOR||'–', r.FECHA||'–'
+  ], (cells) => `
+    <td>${cells[0]}</td>
+    <td>${cells[1]}</td>
+    <td class="num"><span class="pill ${cells[2]>3?'bad':'warn'}">${cells[2]}</span></td>
+    <td>${cells[3]}</td>
+    <td>${cells[4]}</td>
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────
+// LEGALIZACIONES
+// ─────────────────────────────────────────────────────────────
+function renderLegalizaciones() {
+  const rows = DATA.hojas?.legalizaciones || [];
+  if(!rows.length) return;
+
+  const estadoCount = {};
+  rows.forEach(r => { const e=r.ESTADO||'OTRO'; estadoCount[e]=(estadoCount[e]||0)+1; });
+  const selEst = document.getElementById('filter-legaliz-estado');
+  selEst.innerHTML = '<option value="">Todos los estados</option>' + Object.keys(estadoCount).map(e=>`<option>${e}</option>`).join('');
+
+  destroyChart('chart-legaliz-estado');
+  charts['chart-legaliz-estado'] = new Chart(document.getElementById('chart-legaliz-estado'),{
+    type:'pie',
+    data:{labels:Object.keys(estadoCount),datasets:[{data:Object.values(estadoCount),backgroundColor:[COLORS.green,COLORS.amber,COLORS.red],borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
+  });
+
+  // Pagos
+  const pagado = rows.filter(r=>r.ESTADO==='PAGADO').length;
+  const pendiente = rows.filter(r=>r.ESTADO==='PENDIENTE').length;
+  const mora = rows.filter(r=>r.ESTADO==='MORA').length;
+  destroyChart('chart-legaliz-pagos');
+  charts['chart-legaliz-pagos'] = new Chart(document.getElementById('chart-legaliz-pagos'),{
+    type:'bar',
+    data:{
+      labels:['Pagado','Pendiente','En Mora'],
+      datasets:[{label:'Legalizaciones', data:[pagado,pendiente,mora], backgroundColor:[COLORS.green,COLORS.amber,COLORS.red], borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'}}},plugins:{legend:{display:false}}}
+  });
+
+  initTable('tbl-legalizaciones', rows, r=>[
+    r.CONTRATO||'–', r.ASESOR||'–', r.ESTADO||'–', r.DIAS_MORA||0,
+    typeof r.PAGO_RECIBIDO==='number' ? `$${r.PAGO_RECIBIDO.toLocaleString()}` : '–',
+    r.PCT_PAGO||0
+  ], (cells) => `
+    <td style="font-family:var(--mono);font-size:11px;color:var(--gray)">${cells[0]}</td>
+    <td>${cells[1]}</td>
+    <td><span class="pill ${cells[2]==='PAGADO'?'ok':cells[2]==='MORA'?'bad':'warn'}">${cells[2]}</span></td>
+    <td class="num ${cells[3]>15?'bad':''}">${cells[3]>0?cells[3]+' días':'–'}</td>
+    <td class="num">${cells[4]}</td>
+    <td>${pctBar(cells[5],80)}</td>
+  `);
+}
+
+// ─────────────────────────────────────────────────────────────
+// GEOGRAFÍA & MIX
+// ─────────────────────────────────────────────────────────────
+function renderGeografia() {
+  const geoRows = DATA.hojas?.geografia || [];
+  const mixRows = DATA.hojas?.mix || [];
+
+  if(geoRows.length) {
+    const deptos = [...new Set(geoRows.map(r=>r.DEPARTAMENTO).filter(Boolean))];
+    const selDepto = document.getElementById('filter-depto');
+    selDepto.innerHTML = '<option value="">Todos los departamentos</option>' + deptos.map(d=>`<option>${d}</option>`).join('');
+
+    const byDepto = {};
+    geoRows.forEach(r => {
+      const d = r.DEPARTAMENTO||'OTRO';
+      if(!byDepto[d]) byDepto[d] = {ventas:0,efectividad:[]};
+      byDepto[d].ventas += r.VENTAS||0;
+      byDepto[d].efectividad.push(r.EFECTIVIDAD||0);
+    });
+    const deptoLabels = Object.keys(byDepto);
+    const deptoEfect = deptoLabels.map(d => {
+      const arr = byDepto[d].efectividad;
+      return parseFloat((arr.reduce((s,v)=>s+v,0)/arr.length).toFixed(1));
+    });
+
+    destroyChart('chart-geo-depto');
+    charts['chart-geo-depto'] = new Chart(document.getElementById('chart-geo-depto'),{
+      type:'bar',
+      data:{labels:deptoLabels,datasets:[
+        {label:'Efectividad (%)',data:deptoEfect,backgroundColor:deptoEfect.map(v=>v>=80?COLORS.blueM:v>=65?COLORS.amber:COLORS.red),borderRadius:4,yAxisID:'y1'},
+        {label:'Ventas',data:deptoLabels.map(d=>byDepto[d].ventas),backgroundColor:'rgba(26,58,107,.12)',borderRadius:4,yAxisID:'y2'}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,scales:{
+        x:{grid:{display:false}},
+        y1:{type:'linear',position:'left',min:0,max:100,grid:{color:'rgba(0,0,0,.05)'},title:{display:true,text:'Efectividad (%)'}},
+        y2:{type:'linear',position:'right',grid:{display:false},title:{display:true,text:'Ventas'}}
+      },plugins:{legend:{position:'top'}}}
+    });
+
+    initTable('tbl-geografia', geoRows, r=>[
+      r.LOCALIDAD||'–', r.DEPARTAMENTO||'–', r.VENTAS||0, r.EFECTIVIDAD||0
+    ], (cells) => `
+      <td>${cells[0]}</td>
+      <td>${cells[1]}</td>
+      <td class="num">${cells[2]}</td>
+      <td>${pctBar(cells[3],80)}</td>
+    `);
+  }
+
+  if(mixRows.length) {
+    destroyChart('chart-mix-producto');
+    charts['chart-mix-producto'] = new Chart(document.getElementById('chart-mix-producto'),{
+      type:'doughnut',
+      data:{labels:mixRows.map(r=>r.PRODUCTO||'–'),datasets:[{data:mixRows.map(r=>r.CANTIDAD||0),backgroundColor:PALETTE,borderWidth:0,hoverOffset:8}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{boxWidth:10}}}}
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// INSIGHTS & PROYECCIÓN
+// ─────────────────────────────────────────────────────────────
+function renderInsights() {
+  // Proyección
+  const temporal = (DATA.hojas?.temporal||[]).sort((a,b)=>(a.DIA||0)-(b.DIA||0));
+  const actual = temporal.reduce((s,r)=>s+(r.ALTAS||0),0);
+  const diasPasados = temporal.length || 13;
+  const diasTotal = 24;
+  const ritmo = actual / diasPasados;
+  const proyeccion = Math.round(actual + ritmo * (diasTotal - diasPasados));
+  const meta = 1200;
+
+  destroyChart('chart-proyeccion');
+  charts['chart-proyeccion'] = new Chart(document.getElementById('chart-proyeccion'),{
+    type:'bar',
+    data:{
+      labels:['Actual (a D' + diasPasados + ')','Proyección Cierre','Meta Mes'],
+      datasets:[{
+        label:'Altas', data:[actual, proyeccion, meta],
+        backgroundColor:[COLORS.blueM, COLORS.green, '#E2E8F0'],
+        borderRadius:6
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,scales:{
+      x:{grid:{display:false}},
+      y:{grid:{color:'rgba(0,0,0,.05)'}}
+    },plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.toLocaleString()} altas`}}}}
+  });
+
+  // Focos supervisores
+  const supRows = DATA.hojas?.liderazgo || [];
+  const focosSupBad = supRows.filter(r=>(r.EFECTIVIDAD||0)<75).sort((a,b)=>(a.EFECTIVIDAD||0)-(b.EFECTIVIDAD||0));
+
+  const tbFocSup = document.getElementById('tbl-focos-sup-body');
+  if(focosSupBad.length) {
+    tbFocSup.innerHTML = focosSupBad.map(r=>`
+      <tr>
+        <td>${r.SUPERVISOR||'–'}</td>
+        <td class="num">${r.ANULADAS||0}</td>
+        <td>${pctBar(r.EFECTIVIDAD||0,80)}</td>
+        <td><span style="font-size:11px;color:var(--gray)">${getSupervisorAction(r.EFECTIVIDAD||0)}</span></td>
+      </tr>
+    `).join('');
+  } else {
+    tbFocSup.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-l);padding:24px">✅ Todos los supervisores sobre meta</td></tr>';
+  }
+
+  // Focos asesores
+  const asesorRows = DATA.hojas?.asesores || [];
+  const focosAsesorBad = asesorRows.filter(r=>(r.EFECTIVIDAD||0)<60&&r.ESTADO!=='INACTIVO').sort((a,b)=>(a.EFECTIVIDAD||0)-(b.EFECTIVIDAD||0)).slice(0,15);
+
+  const tbFocAs = document.getElementById('tbl-focos-asesor-body');
+  if(focosAsesorBad.length) {
+    tbFocAs.innerHTML = focosAsesorBad.map(r=>`
+      <tr>
+        <td>${r.ASESOR||'–'}</td>
+        <td>${pctBar(r.EFECTIVIDAD||0,60)}</td>
+        <td class="num">${r.ANULADAS||0}</td>
+        <td>${r.SUPERVISOR||'–'}</td>
+        <td><span style="font-size:11px;color:var(--gray)">${getAsesorAction(r.EFECTIVIDAD||0)}</span></td>
+      </tr>
+    `).join('');
+  } else {
+    tbFocAs.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-l);padding:24px">✅ Sin asesores críticos</td></tr>';
+  }
+
+  // Insight cards
+  const m = DATA.metricas || {};
+  const efectividad = m.efectividad_global || 79.2;
+  const afectaciones = focosAsesorBad.length + focosSupBad.length;
+  const insights = [
+    {
+      icon:'📈', color:'var(--blueM)', borderColor:COLORS.blueM,
+      title:'Ritmo de Producción',
+      body: `Ritmo actual: <strong>${Math.round(ritmo)} altas/día</strong>. Proyección de cierre: <strong>${proyeccion.toLocaleString()}</strong> vs meta ${meta.toLocaleString()}. ${proyeccion>=meta?'✅ En camino a superar meta.':'⚠️ Se requieren acciones para alcanzar meta.'}`
+    },
+    {
+      icon:'⚠️', color:'var(--amber)', borderColor:COLORS.amber,
+      title:'Focos de Intervención',
+      body: `Se identificaron <strong>${afectaciones} agentes con efectividad crítica</strong>: ${focosSupBad.length} supervisores y ${focosAsesorBad.length} asesores. Se recomienda sesión de retroalimentación y plan de trabajo inmediato.`
+    },
+    {
+      icon:'🎯', color:'var(--green)', borderColor:COLORS.green,
+      title:'Eficiencia Global',
+      body: `La eficiencia global es <strong>${efectividad}%</strong> (meta: 85%). ${efectividad>=85?'✅ Se está cumpliendo la meta de eficiencia.':'📌 Brecha de ' + (85-efectividad).toFixed(1) + '% — revisar motivos de anulación más frecuentes.'}`
+    },
+    {
+      icon:'💡', color:'var(--navy)', borderColor:COLORS.navy,
+      title:'Recomendación Estratégica',
+      body: 'Priorizar la resolución de <strong>pendientes con más de 10 días</strong> de antigüedad. Revisar con cada supervisor los motivos de cancelación atribuibles y activar protocolo de gestión de quiebres.'
+    },
+  ];
+
+  document.getElementById('insights-cards').innerHTML = insights.map(i=>`
+    <div style="background:#fff;border:1px solid var(--border);border-left:4px solid ${i.borderColor};border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);">
+      <div style="font-size:20px;margin-bottom:8px;">${i.icon}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">${i.title}</div>
+      <div style="font-size:12px;color:var(--gray);line-height:1.6;">${i.body}</div>
+    </div>
+  `).join('');
+}
+
+function getSupervisorAction(ef) {
+  if(ef < 60) return 'Plan de mejora urgente + acompañamiento diario';
+  if(ef < 70) return 'Revisión semanal + análisis de motivos de anulación';
+  return 'Seguimiento quincenal + coaching focalizado';
+}
+function getAsesorAction(ef) {
+  if(ef < 45) return 'Plan de trabajo inmediato + capacitación técnica';
+  if(ef < 55) return 'Revisión de gestión + refuerzo de argumentación';
+  return 'Monitoreo activo + feedback supervisor';
+}
+
+// ─────────────────────────────────────────────────────────────
+// TABLA ENGINE (init, sort, filter, pager)
+// ─────────────────────────────────────────────────────────────
+function initTable(id, rawRows, getCells, renderRow) {
+  tableState[id] = {
+    rawRows,
+    getCells,
+    renderRow,
+    filtered: rawRows,
+    sortCol: -1,
+    sortDir: 1,
+    page: 0,
+  };
+  renderTable(id);
+}
+
+function renderTable(id) {
+  const st = tableState[id];
+  if(!st) return;
+  const { filtered, page, renderRow, getCells } = st;
+  const start = page * PAGE_SIZE;
+  const slice = filtered.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById(id + '-body');
+  if(!tbody) return;
+  tbody.innerHTML = slice.length
+    ? slice.map(r => `<tr>${renderRow(getCells(r))}</tr>`).join('')
+    : `<tr><td colspan="20" style="text-align:center;color:var(--gray-l);padding:24px">Sin resultados</td></tr>`;
+  renderPager(id);
+}
+
+function sortTable(id, colIdx) {
+  const st = tableState[id];
+  if(!st) return;
+  const col = parseInt(colIdx);
+  if(st.sortCol === col) { st.sortDir *= -1; }
+  else { st.sortCol = col; st.sortDir = -1; }
+  st.filtered = [...st.filtered].sort((a,b) => {
+    const av = st.getCells(a)[col];
+    const bv = st.getCells(b)[col];
+    if(typeof av === 'number' && typeof bv === 'number') return (av-bv)*st.sortDir;
+    return String(av).localeCompare(String(bv))*st.sortDir;
+  });
+  st.page = 0;
+  renderTable(id);
+  // Update sort icons
+  const table = document.getElementById(id);
+  if(table) {
+    table.querySelectorAll('thead th').forEach((th,i) => {
+      th.classList.remove('sort-asc','sort-desc');
+      if(i===col) th.classList.add(st.sortDir===1?'sort-asc':'sort-desc');
+    });
+  }
+}
+
+function filterTableSearch(id, query) {
+  const st = tableState[id];
+  if(!st) return;
+  const q = query.toLowerCase().trim();
+  st.filtered = q
+    ? st.rawRows.filter(r => st.getCells(r).some(v => String(v||'').toLowerCase().includes(q)))
+    : [...st.rawRows];
+  st.page = 0;
+  renderTable(id);
+}
+
+function filterTableCol(id, colIdx, val) {
+  const st = tableState[id];
+  if(!st) return;
+  st.filtered = val
+    ? st.rawRows.filter(r => String(st.getCells(r)[colIdx]||'').toUpperCase().includes(val.toUpperCase()))
+    : [...st.rawRows];
+  st.page = 0;
+  renderTable(id);
+}
+
+function renderPager(id) {
+  const st = tableState[id];
+  const el = document.getElementById('pager-' + id.replace('tbl-',''));
+  if(!el || !st) return;
+  const total = st.filtered.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const p = st.page;
+  const start = p*PAGE_SIZE+1;
+  const end = Math.min((p+1)*PAGE_SIZE, total);
+
+  if(pages <= 1) { el.innerHTML = `<span>${total} registros</span>`; return; }
+
+  let btns = '';
+  for(let i=0;i<pages;i++) {
+    if(i===0||i===pages-1||Math.abs(i-p)<=1) {
+      btns += `<button class="pager-btn${i===p?' active':''}" onclick="goPage('${id}',${i})">${i+1}</button>`;
+    } else if(Math.abs(i-p)===2) { btns += `<span style="padding:0 4px;color:var(--gray-l)">…</span>`; }
+  }
+
+  el.innerHTML = `
+    <span>${start}–${end} de ${total}</span>
+    <div class="pager-btns">
+      <button class="pager-btn" onclick="goPage('${id}',${p-1})" ${p===0?'disabled':''}>‹</button>
+      ${btns}
+      <button class="pager-btn" onclick="goPage('${id}',${p+1})" ${p===pages-1?'disabled':''}>›</button>
+    </div>
+  `;
+}
+
+function goPage(id, p) {
+  const st = tableState[id];
+  if(!st) return;
+  const pages = Math.ceil(st.filtered.length / PAGE_SIZE);
+  st.page = Math.max(0, Math.min(p, pages-1));
+  renderTable(id);
+}
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+function pctBar(val, target) {
+  const pct = Math.min(parseFloat(val)||0, 100);
+  const color = pct >= target ? COLORS.green : pct >= target*0.85 ? COLORS.amber : COLORS.red;
+  return `<div class="bar-wrap">
+    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span class="bar-lbl" style="color:${color}">${pct}%</span>
+  </div>`;
+}
+
+function destroyChart(id) {
+  if(charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────────────────
+function setTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name)?.classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOWNLOADS
+// ─────────────────────────────────────────────────────────────
+function showDownloadMenu() {
+  const m = document.getElementById('download-menu');
+  m.style.display = m.style.display==='none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest('.btn-download') && !e.target.closest('#download-menu')) {
+    const m = document.getElementById('download-menu');
+    if(m) m.style.display = 'none';
+  }
+});
+
+function downloadJSON() {
+  if(!DATA) return;
+  const blob = new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+  dlBlob(blob, 'informe-fibra-datos.json');
+  document.getElementById('download-menu').style.display='none';
+}
+
+function downloadExcel() {
+  if(!DATA||!window.XLSX) return;
+  const wb = XLSX.utils.book_new();
+  Object.entries(DATA.hojas||{}).forEach(([name, rows]) => {
+    if(rows&&rows.length) {
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, name.substring(0,31));
+    }
+  });
+  XLSX.writeFile(wb, 'informe-fibra.xlsx');
+  document.getElementById('download-menu').style.display='none';
+}
+
+async function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const W = 297, M = 15;
+  const m = DATA?.metricas || {};
+
+  // Header
+  doc.setFillColor(10,22,40);
+  doc.rect(0,0,W,28,'F');
+  doc.setFillColor(232,35,42);
+  doc.rect(0,26,W,2,'F');
+
+  doc.setFontSize(16); doc.setTextColor(255,255,255); doc.setFont(undefined,'bold');
+  doc.text('Informe Gerencial · Fibra Canal Online', M, 13);
+  doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(160,171,190);
+  doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, M, 20);
+  doc.text(`Datos: ${DATA?.meta?.actualizado||'—'}`, W-M, 20, {align:'right'});
+
+  // KPIs row
+  const kpis = [
+    ['Total Órdenes','1,009'],
+    ['Terminadas', m.total_altas?.toLocaleString()||'650'],
+    ['Anuladas', m.total_anuladas?.toLocaleString()||'171'],
+    ['Pendientes', m.total_pendientes?.toLocaleString()||'188'],
+    ['Eficiencia', (m.efectividad_global||79.2)+'%'],
+  ];
+  const cardW = (W-M*2-8*4)/5;
+  kpis.forEach((k,i) => {
+    const x = M + i*(cardW+8);
+    doc.setFillColor(244,246,250); doc.setDrawColor(216,223,237);
+    doc.roundedRect(x,34,cardW,22,2,2,'FD');
+    doc.setFontSize(7); doc.setTextColor(107,122,153); doc.setFont(undefined,'normal');
+    doc.text(k[0].toUpperCase(), x+4, 41);
+    doc.setFontSize(14); doc.setTextColor(10,22,40); doc.setFont(undefined,'bold');
+    doc.text(k[1], x+4, 51);
+  });
+
+  // Table
+  doc.setFontSize(9); doc.setTextColor(10,22,40); doc.setFont(undefined,'bold');
+  doc.text('EFICIENCIA POR REGIONAL', M, 68);
+  doc.setFont(undefined,'normal');
+  const rows = DATA?.hojas?.resumen || [];
+  const headers = ['Regional','Total','Terminadas','Anuladas','Pendientes','Eficiencia'];
+  const colW = [55,30,35,30,35,35];
+  let y = 73;
+  doc.setFillColor(244,246,250);
+  doc.rect(M,y,W-M*2,7,'F');
+  doc.setFontSize(8); doc.setTextColor(107,122,153); doc.setFont(undefined,'bold');
+  let x = M+2;
+  headers.forEach((h,i) => { doc.text(h, x, y+5); x+=colW[i]; });
+  y += 8;
+  doc.setFont(undefined,'normal'); doc.setTextColor(10,22,40);
+  rows.forEach((r,idx) => {
+    if(y>190) return;
+    if(idx%2===0) { doc.setFillColor(250,251,253); doc.rect(M,y,W-M*2,6,'F'); }
+    const cells = [r.REGIONAL||'–',r.TOTAL||0,r.TERMINADAS||0,r.ANULADAS||0,r.PENDIENTES||0,(r.EFICIENCIA||0)+'%'];
+    x = M+2;
+    cells.forEach((c,i) => { doc.text(String(c), x, y+4); x+=colW[i]; });
+    y += 6;
+  });
+
+  doc.save('informe-gerencial-fibra.pdf');
+  document.getElementById('download-menu').style.display='none';
+}
+
+function dlBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name;
+  a.click(); URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
