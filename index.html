@@ -3,774 +3,1334 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Informe Fibra · Canal Online</title>
+<title>Informe Gerencial · Fibra Canal Online · Mayo 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="data.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --bg:        #f4f5f7;
+  --white:     #ffffff;
+  --surface:   #ffffff;
+  --surface2:  #f8f9fb;
+  --border:    #e2e5eb;
+  --border2:   #d0d4de;
 
-  :root {
-    --bg: #0a0e1a;
-    --surface: #111827;
-    --surface2: #1a2235;
-    --border: #1f2e47;
-    --accent: #00e5ff;
-    --accent2: #ff6b35;
-    --accent3: #7c3aed;
-    --green: #22d3a5;
-    --red: #f43f5e;
-    --yellow: #f59e0b;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --font-head: 'Syne', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
+  /* Atento corporate palette */
+  --red:       #e8001d;
+  --red-light: #fef0f2;
+  --red-mid:   rgba(232,0,29,0.12);
+  --navy:      #001e50;
+  --navy-light:#e8eaf0;
+  --blue:      #0050c8;
+  --blue-light:#e6eeff;
+  --teal:      #00b4d8;
+  --teal-light:#e0f7fc;
+  --amber:     #f59e0b;
+  --amber-light:#fffbeb;
+  --green:     #10b981;
+  --green-light:#ecfdf5;
+  --purple:    #7c3aed;
+  --purple-light:#f3f0ff;
+  --gray:      #64748b;
+  --gray-light:#f1f5f9;
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  --text:      #1a2035;
+  --muted:     #64748b;
+  --font:      'IBM Plex Sans', sans-serif;
+  --mono:      'IBM Plex Mono', monospace;
+  --radius:    10px;
+  --shadow:    0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-head);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;}
 
-  /* Grid bg texture */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
+/* ─── TOP BAR ─────────────────────────────────────────────── */
+.topbar{
+  background:var(--navy);
+  padding:0 32px;
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-brand{display:flex;align-items:center;gap:14px;}
+.atento-logo{
+  width:36px;height:36px;border-radius:6px;
+  background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;color:#fff;letter-spacing:-0.5px;
+}
+.topbar-title{color:#fff;font-size:15px;font-weight:600;letter-spacing:.2px;}
+.topbar-sub{color:rgba(255,255,255,.5);font-size:12px;font-family:var(--mono);}
+.topbar-badge{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.8);font-size:11px;font-family:var(--mono);
+  padding:5px 12px;border-radius:4px;letter-spacing:.5px;
+}
 
-  .page { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+/* ─── NAV TABS ────────────────────────────────────────────── */
+.nav{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:0 32px;display:flex;gap:4px;overflow-x:auto;
+  scrollbar-width:none;position:sticky;top:56px;z-index:99;
+}
+.nav::-webkit-scrollbar{display:none;}
+.nav-btn{
+  padding:12px 18px;border:none;background:none;cursor:pointer;
+  font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted);
+  border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;
+}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);}
 
-  /* HEADER */
-  header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    padding-bottom: 32px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-  .header-left h1 {
-    font-size: clamp(28px, 4vw, 48px);
-    font-weight: 800;
-    letter-spacing: -1px;
-    line-height: 1;
-    color: #fff;
-  }
-  .header-left h1 span { color: var(--accent); }
-  .header-left p {
-    margin-top: 6px;
-    font-size: 13px;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .header-badge {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 18px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--accent);
-    letter-spacing: 1px;
-  }
+/* ─── PAGE LAYOUT ────────────────────────────────────────── */
+.page{max-width:1400px;margin:0 auto;padding:28px 32px 60px;}
+.section{display:none;}
+.section.active{display:block;}
 
-  /* FILTERS */
-  .filters {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 28px;
-    align-items: center;
-  }
-  .filter-label {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-right: 4px;
-  }
-  select {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--font-head);
-    font-size: 13px;
-    padding: 8px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    outline: none;
-    transition: border-color .2s;
-  }
-  select:hover, select:focus { border-color: var(--accent); }
+/* ─── SECTION HEADER ─────────────────────────────────────── */
+.sec-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
+.sec-title{font-size:18px;font-weight:700;color:var(--navy);}
+.sec-sub{font-size:12px;color:var(--muted);font-family:var(--mono);margin-top:2px;}
 
-  /* KPI CARDS */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  .kpi {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 22px;
-    position: relative;
-    overflow: hidden;
-    transition: transform .2s, border-color .2s;
-  }
-  .kpi:hover { transform: translateY(-2px); border-color: var(--accent); }
-  .kpi::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-  }
-  .kpi.total::before { background: var(--accent); }
-  .kpi.term::before { background: var(--green); }
-  .kpi.anul::before { background: var(--red); }
-  .kpi.pend::before { background: var(--yellow); }
-  .kpi.empa::before { background: var(--accent2); }
-  .kpi.efic::before { background: var(--accent3); }
+/* ─── DIVIDERS ────────────────────────────────────────────── */
+.divider{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);font-family:var(--mono);
+  display:flex;align-items:center;gap:12px;margin:24px 0 14px;
+}
+.divider::after{content:'';flex:1;height:1px;background:var(--border);}
 
-  .kpi-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    margin-bottom: 8px;
-  }
-  .kpi-value {
-    font-size: 36px;
-    font-weight: 800;
-    line-height: 1;
-    color: #fff;
-  }
-  .kpi.total .kpi-value { color: var(--accent); }
-  .kpi.term .kpi-value { color: var(--green); }
-  .kpi.anul .kpi-value { color: var(--red); }
-  .kpi.pend .kpi-value { color: var(--yellow); }
-  .kpi.empa .kpi-value { color: var(--accent2); }
-  .kpi.efic .kpi-value { color: var(--accent3); }
+/* ─── KPI GRID ────────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.kpi{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;position:relative;overflow:hidden;box-shadow:var(--shadow);
+  transition:box-shadow .2s,transform .2s;
+}
+.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0;}
+.kpi.k-total::before{background:var(--navy);}
+.kpi.k-term::before{background:var(--green);}
+.kpi.k-anul::before{background:var(--red);}
+.kpi.k-pend::before{background:var(--amber);}
+.kpi.k-empa::before{background:var(--teal);}
+.kpi.k-efic::before{background:var(--blue);}
+.kpi.k-proy::before{background:var(--purple);}
+.kpi.k-ases::before{background:var(--gray);}
 
-  .kpi-sub {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 4px;
-    font-family: var(--font-mono);
-  }
+.kpi-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:6px;}
+.kpi-value{font-size:32px;font-weight:700;line-height:1;color:var(--text);}
+.kpi.k-total .kpi-value{color:var(--navy);}
+.kpi.k-term .kpi-value{color:var(--green);}
+.kpi.k-anul .kpi-value{color:var(--red);}
+.kpi.k-pend .kpi-value{color:var(--amber);}
+.kpi.k-empa .kpi-value{color:var(--teal);}
+.kpi.k-efic .kpi-value{color:var(--blue);}
+.kpi.k-proy .kpi-value{color:var(--purple);}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono);}
+.kpi-tag{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--mono);}
+.kpi-tag.good{background:var(--green-light);color:var(--green);}
+.kpi-tag.warn{background:var(--amber-light);color:var(--amber);}
+.kpi-tag.bad{background:var(--red-light);color:var(--red);}
 
-  /* CHART GRID */
-  .chart-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  .chart-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    transition: border-color .2s;
-  }
-  .chart-box:hover { border-color: var(--border); }
+/* ─── CHART GRID ─────────────────────────────────────────── */
+.grid-12{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-bottom:14px;}
+.col-8{grid-column:span 8;}
+.col-6{grid-column:span 6;}
+.col-5{grid-column:span 5;}
+.col-7{grid-column:span 7;}
+.col-4{grid-column:span 4;}
+.col-3{grid-column:span 3;}
+.col-12{grid-column:span 12;}
+@media(max-width:900px){.col-8,.col-6,.col-5,.col-7,.col-4,.col-3,.col-12{grid-column:span 12;}}
 
-  .col-8 { grid-column: span 8; }
-  .col-6 { grid-column: span 6; }
-  .col-4 { grid-column: span 4; }
-  .col-12 { grid-column: span 12; }
+.card{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;box-shadow:var(--shadow);
+}
+.card-title{
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  font-family:var(--mono);margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;}
+canvas{max-height:260px;}
 
-  @media (max-width: 900px) {
-    .col-8, .col-6, .col-4, .col-12 { grid-column: span 12; }
-  }
+/* ─── HORIZONTAL BARS ────────────────────────────────────── */
+.hbar-list{display:flex;flex-direction:column;gap:10px;}
+.hbar-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
+.hbar-name{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;}
+.hbar-val{color:var(--navy);font-family:var(--mono);font-weight:600;}
+.hbar-track{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;}
+.hbar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--blue));}
+.hbar-fill.green{background:linear-gradient(90deg,var(--teal),var(--green));}
+.hbar-fill.amber{background:linear-gradient(90deg,var(--amber),#f97316);}
 
-  .chart-title {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .chart-title::before {
-    content: '';
-    display: inline-block;
-    width: 8px; height: 8px;
-    border-radius: 2px;
-    background: var(--accent);
-  }
-  canvas { max-height: 280px; }
+/* ─── TABLE ──────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{border-bottom:2px solid var(--border);}
+th{
+  text-align:left;padding:10px 14px;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);font-family:var(--mono);white-space:nowrap;
+  background:var(--surface2);
+}
+th:first-child{border-radius:6px 0 0 6px;}
+th:last-child{border-radius:0 6px 6px 0;}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--surface2);}
 
-  /* HORIZONTAL BARS (custom) */
-  .hbar-list { display: flex; flex-direction: column; gap: 10px; }
-  .hbar-item {}
-  .hbar-meta { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-  .hbar-name { color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%; }
-  .hbar-val { color: var(--accent); font-family: var(--font-mono); }
-  .hbar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-  .hbar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent3)); transition: width .6s ease; }
+.num{font-family:var(--mono);font-weight:600;}
+.num-green{color:var(--green);}
+.num-red{color:var(--red);}
+.num-amber{color:var(--amber);}
+.num-navy{color:var(--navy);}
+.num-blue{color:var(--blue);}
+.num-teal{color:var(--teal);}
 
-  /* TABLE */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead tr { border-bottom: 1px solid var(--border); }
-  th {
-    text-align: left;
-    padding: 10px 14px;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-weight: 500;
-    white-space: nowrap;
-  }
-  td { padding: 10px 14px; border-bottom: 1px solid rgba(31,46,71,0.5); vertical-align: middle; }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: var(--surface2); }
+/* ─── BADGES ─────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);}
+.badge-green{background:var(--green-light);color:var(--green);}
+.badge-red{background:var(--red-light);color:var(--red);}
+.badge-amber{background:var(--amber-light);color:var(--amber);}
+.badge-blue{background:var(--blue-light);color:var(--blue);}
+.badge-navy{background:var(--navy-light);color:var(--navy);}
+.badge-teal{background:var(--teal-light);color:var(--teal);}
+.badge-purple{background:var(--purple-light);color:var(--purple);}
+.badge-gray{background:var(--gray-light);color:var(--gray);}
 
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-family: var(--font-mono);
-    font-weight: 500;
-  }
-  .badge-green { background: rgba(34,211,165,.15); color: var(--green); }
-  .badge-red { background: rgba(244,63,94,.15); color: var(--red); }
-  .badge-yellow { background: rgba(245,158,11,.15); color: var(--yellow); }
+/* ─── EFIC BAR (inline) ──────────────────────────────────── */
+.efic-bar{display:flex;align-items:center;gap:8px;}
+.efic-track{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:60px;}
+.efic-fill{height:100%;border-radius:3px;transition:width .6s;}
+.efic-fill.high{background:var(--green);}
+.efic-fill.mid{background:var(--amber);}
+.efic-fill.low{background:var(--red);}
 
-  .num-green { color: var(--green); font-family: var(--font-mono); }
-  .num-red { color: var(--red); font-family: var(--font-mono); }
-  .num-yellow { color: var(--yellow); font-family: var(--font-mono); }
-  .num-accent { color: var(--accent); font-family: var(--font-mono); }
+/* ─── INSIGHT CARDS ─────────────────────────────────────── */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px;}
+.insight{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow);border-left:4px solid var(--red);
+}
+.insight.warn{border-left-color:var(--amber);}
+.insight.good{border-left-color:var(--green);}
+.insight.info{border-left-color:var(--blue);}
+.insight-icon{font-size:20px;margin-bottom:8px;}
+.insight-title{font-weight:600;font-size:13px;color:var(--navy);margin-bottom:4px;}
+.insight-body{font-size:12px;color:var(--muted);line-height:1.6;}
+.insight-metric{font-size:22px;font-weight:700;color:var(--red);margin:6px 0 4px;font-family:var(--mono);}
+.insight.warn .insight-metric{color:var(--amber);}
+.insight.good .insight-metric{color:var(--green);}
+.insight.info .insight-metric{color:var(--blue);}
 
-  /* SECTION DIVIDER */
-  .section-title {
-    font-size: 11px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    padding: 8px 0 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
+/* ─── FOCO PILL ──────────────────────────────────────────── */
+.foco-list{display:flex;flex-direction:column;gap:8px;}
+.foco-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-radius:8px;background:var(--red-light);
+  border:1px solid rgba(232,0,29,.15);
+}
+.foco-name{font-weight:500;font-size:13px;color:var(--navy);}
+.foco-sup{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.foco-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 
-  /* FOOTER */
-  footer {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-    letter-spacing: 1px;
-  }
+/* ─── PROYECCION GAUGE ──────────────────────────────────── */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.gauge-num{font-size:48px;font-weight:700;color:var(--purple);font-family:var(--mono);}
+.gauge-label{font-size:11px;color:var(--muted);text-align:center;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;}
+.progress-stack{display:flex;flex-direction:column;gap:10px;width:100%;}
+.progress-item{display:flex;align-items:center;gap:10px;font-size:12px;}
+.progress-label{width:90px;color:var(--muted);font-family:var(--mono);flex-shrink:0;}
+.progress-track{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;}
+.progress-val{width:50px;text-align:right;font-family:var(--mono);font-weight:600;font-size:12px;}
+
+/* ─── MORA TABLE ─────────────────────────────────────────── */
+.mora-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;}
+.mora-cell{
+  background:var(--white);border:1px solid var(--border);border-radius:8px;
+  padding:10px;text-align:center;
+}
+.mora-days{font-size:18px;font-weight:700;font-family:var(--mono);color:var(--navy);}
+.mora-label{font-size:10px;color:var(--muted);}
+.mora-n{font-size:13px;font-weight:600;color:var(--red);margin-top:2px;}
+.mora-cell.critical{background:var(--red-light);border-color:rgba(232,0,29,.3);}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .page{padding:20px 16px 60px;}
+  .topbar{padding:0 16px;}
+  .nav{padding:0 16px;}
+  .kpi-value{font-size:26px;}
+}
+
+/* PRINT */
+@media print{
+  .topbar,.nav{position:static;}
+  .section{display:block!important;}
+  .nav-btn{display:none;}
+}
 </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- HEADER -->
-  <header>
-    <div class="header-left">
-      <h1>Informe <span>Fibra</span></h1>
-      <p>Canal Online · Seguimiento Mayo 2026</p>
-    </div>
-    <div class="header-badge" id="last-update">CARGANDO...</div>
-  </header>
-
-  <!-- FILTERS -->
-  <div class="filters">
-    <span class="filter-label">Filtrar por:</span>
-    <select id="f-semana"><option value="">Todas las semanas</option></select>
-    <select id="f-regional"><option value="">Todas las regionales</option></select>
-    <select id="f-supervisor"><option value="">Todos los supervisores</option></select>
-    <select id="f-producto"><option value="">Todos los productos</option></select>
-  </div>
-
-  <!-- KPI CARDS -->
-  <div class="kpi-grid">
-    <div class="kpi total">
-      <div class="kpi-label">Total Registros</div>
-      <div class="kpi-value" id="kpi-total">—</div>
-      <div class="kpi-sub">órdenes en seguimiento</div>
-    </div>
-    <div class="kpi term">
-      <div class="kpi-label">Terminadas</div>
-      <div class="kpi-value" id="kpi-term">—</div>
-      <div class="kpi-sub" id="kpi-term-pct">—% del total</div>
-    </div>
-    <div class="kpi anul">
-      <div class="kpi-label">Anuladas</div>
-      <div class="kpi-value" id="kpi-anul">—</div>
-      <div class="kpi-sub" id="kpi-anul-pct">—% del total</div>
-    </div>
-    <div class="kpi pend">
-      <div class="kpi-label">Pendientes</div>
-      <div class="kpi-value" id="kpi-pend">—</div>
-      <div class="kpi-sub" id="kpi-pend-pct">—% del total</div>
-    </div>
-    <div class="kpi empa">
-      <div class="kpi-label">Empaquetadas</div>
-      <div class="kpi-value" id="kpi-empa">—</div>
-      <div class="kpi-sub">trio / convergente</div>
-    </div>
-    <div class="kpi efic">
-      <div class="kpi-label">Eficiencia</div>
-      <div class="kpi-value" id="kpi-efic">—%</div>
-      <div class="kpi-sub">term / (term + anul)</div>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="atento-logo">AT</div>
+    <div>
+      <div class="topbar-title">Informe Gerencial · Fibra Canal Online</div>
+      <div class="topbar-sub">MAYO 2026 · SEGUIMIENTO DÍA 13 DE 24</div>
     </div>
   </div>
-
-  <!-- CHARTS ROW 1 -->
-  <div class="section-title">Evolución diaria</div>
-  <div class="chart-grid">
-    <div class="chart-box col-8">
-      <div class="chart-title">Terminadas · Anuladas · Pendientes por día</div>
-      <canvas id="chart-diario"></canvas>
-    </div>
-    <div class="chart-box col-4">
-      <div class="chart-title">Estado general</div>
-      <canvas id="chart-donut"></canvas>
-    </div>
-  </div>
-
-  <!-- CHARTS ROW 2 -->
-  <div class="section-title">Desagregación</div>
-  <div class="chart-grid">
-    <div class="chart-box col-6">
-      <div class="chart-title">Por Regional</div>
-      <canvas id="chart-regional"></canvas>
-    </div>
-    <div class="chart-box col-6">
-      <div class="chart-title">Por Semana</div>
-      <canvas id="chart-semana"></canvas>
-    </div>
-  </div>
-
-  <!-- CHARTS ROW 3 -->
-  <div class="section-title">Análisis de quiebres</div>
-  <div class="chart-grid">
-    <div class="chart-box col-6">
-      <div class="chart-title">Top Motivos de Quiebre</div>
-      <div class="hbar-list" id="quiebre-bars"></div>
-    </div>
-    <div class="chart-box col-6">
-      <div class="chart-title">Atribuible</div>
-      <canvas id="chart-atrib"></canvas>
-    </div>
-  </div>
-
-  <!-- TABLE: REGIONAL -->
-  <div class="section-title">Resumen por Regional</div>
-  <div class="chart-box col-12" style="margin-bottom:16px;">
-    <div class="table-wrap">
-      <table id="tbl-regional">
-        <thead>
-          <tr>
-            <th>Regional</th>
-            <th>Total</th>
-            <th>Terminadas</th>
-            <th>Anuladas</th>
-            <th>Pendientes</th>
-            <th>Empaquetadas</th>
-            <th>Eficiencia</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- TABLE: SUPERVISOR -->
-  <div class="section-title">Resumen por Supervisor</div>
-  <div class="chart-box col-12" style="margin-bottom:16px;">
-    <div class="table-wrap">
-      <table id="tbl-supervisor">
-        <thead>
-          <tr>
-            <th>Supervisor</th>
-            <th>Total</th>
-            <th>Terminadas</th>
-            <th>Anuladas</th>
-            <th>Pendientes</th>
-            <th>Eficiencia</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <footer>
-    INFORME FIBRA · CANAL ONLINE · DATOS: HOJA BBDD · MAYO 2026
-  </footer>
+  <div class="topbar-badge">DATOS: 14·MAY·2026</div>
 </div>
 
-<script>
-// ── CHART DEFAULTS ─────────────────────────────────────────
-Chart.defaults.color = '#64748b';
-Chart.defaults.borderColor = '#1f2e47';
-Chart.defaults.font.family = "'DM Mono', monospace";
-Chart.defaults.font.size = 11;
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('resumen')">📊 Resumen Ejecutivo</button>
+  <button class="nav-btn" onclick="showSection('liderazgo')">👥 Liderazgo</button>
+  <button class="nav-btn" onclick="showSection('temporal')">📅 Análisis Temporal</button>
+  <button class="nav-btn" onclick="showSection('asesores')">🧑‍💼 Asesores</button>
+  <button class="nav-btn" onclick="showSection('quiebres')">⚠️ Quiebres</button>
+  <button class="nav-btn" onclick="showSection('legalizaciones')">📋 Legalizaciones</button>
+  <button class="nav-btn" onclick="showSection('geografia')">🗺️ Geografía & Mix</button>
+  <button class="nav-btn" onclick="showSection('insights')">💡 Insights & Proyección</button>
+</div>
 
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 1: RESUMEN EJECUTIVO
+═══════════════════════════════════════════════════════════ -->
+<div class="section active" id="sec-resumen">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Resumen Ejecutivo</div>
+      <div class="sec-sub">Canal Online · Fibra · Mayo 2026 · Corte día 13</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi k-total">
+      <div class="kpi-label">Total Órdenes</div>
+      <div class="kpi-value">1,009</div>
+      <div class="kpi-sub">en seguimiento activo</div>
+    </div>
+    <div class="kpi k-term">
+      <div class="kpi-label">Terminadas (Altas)</div>
+      <div class="kpi-value">650</div>
+      <div class="kpi-sub">64.4% del total</div>
+      <span class="kpi-tag good">▲ En meta</span>
+    </div>
+    <div class="kpi k-anul">
+      <div class="kpi-label">Anuladas</div>
+      <div class="kpi-value">171</div>
+      <div class="kpi-sub">16.9% del total</div>
+      <span class="kpi-tag warn">Monitorear</span>
+    </div>
+    <div class="kpi k-pend">
+      <div class="kpi-label">Pendientes</div>
+      <div class="kpi-value">188</div>
+      <div class="kpi-sub">18.6% del total</div>
+      <span class="kpi-tag warn">18 días restantes</span>
+    </div>
+    <div class="kpi k-empa">
+      <div class="kpi-label">Empaquetadas</div>
+      <div class="kpi-value">42</div>
+      <div class="kpi-sub">TRIO / Convergente</div>
+    </div>
+    <div class="kpi k-efic">
+      <div class="kpi-label">Eficiencia Global</div>
+      <div class="kpi-value">79.2%</div>
+      <div class="kpi-sub">Altas / (Altas + Anuladas)</div>
+      <span class="kpi-tag warn">Meta: 85%</span>
+    </div>
+    <div class="kpi k-proy">
+      <div class="kpi-label">Proyección Mes</div>
+      <div class="kpi-value">1,200</div>
+      <div class="kpi-sub">estimado cierre mayo</div>
+      <span class="kpi-tag good">Ritmo: 50/día</span>
+    </div>
+    <div class="kpi k-ases">
+      <div class="kpi-label">Asesores Planta</div>
+      <div class="kpi-value">100</div>
+      <div class="kpi-sub">activos al 14·may</div>
+    </div>
+  </div>
+
+  <div class="divider">Desempeño por Regional</div>
+  <div class="grid-12" style="margin-bottom:14px;">
+    <div class="card col-8">
+      <div class="card-title"><span class="dot"></span>Terminadas · Anuladas · Pendientes por Regional</div>
+      <canvas id="ch-reg-resumen"></canvas>
+    </div>
+    <div class="card col-4">
+      <div class="card-title"><span class="dot"></span>Distribución General de Estados</div>
+      <canvas id="ch-donut-resumen"></canvas>
+    </div>
+  </div>
+
+  <div class="divider">Eficiencia por Regional</div>
+  <div class="card col-12" style="margin-bottom:14px;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Regional</th><th>Total</th><th>Terminadas</th><th>Anuladas</th>
+          <th>Pendientes</th><th>Empaquetadas</th><th>Eficiencia</th>
+        </tr></thead>
+        <tbody id="tbl-resumen-reg"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider">Mix de Producto</div>
+  <div class="grid-12">
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Distribución por Producto</div>
+      <canvas id="ch-producto"></canvas>
+    </div>
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Eficiencia por Producto</div>
+      <div id="prod-bars" class="hbar-list" style="margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 2: LIDERAZGO
+═══════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-liderazgo">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Métricas por Liderazgo</div>
+      <div class="sec-sub">Supervisores · Líneas · Eficiencia de Conversión</div>
+    </div>
+  </div>
+
+  <div class="divider">Supervisores</div>
+  <div class="grid-12">
+    <div class="card col-8">
+      <div class="card-title"><span class="dot"></span>Volumen por Supervisor</div>
+      <canvas id="ch-sup-bar"></canvas>
+    </div>
+    <div class="card col-4">
+      <div class="card-title"><span class="dot"></span>Eficiencia por Supervisor</div>
+      <div id="sup-efic-bars" class="hbar-list" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="divider">Detalle por Supervisor</div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Supervisor</th><th>Total</th><th>Terminadas</th><th>Anuladas</th>
+          <th>Pendientes</th><th>Empaquetadas</th><th>Eficiencia</th><th>Estado</th>
+        </tr></thead>
+        <tbody id="tbl-supervisor"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider">Desempeño por Línea</div>
+  <div class="grid-12">
+    <div class="card col-12">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Línea</th><th>Terminadas</th><th>Anuladas</th><th>Pendientes</th><th>Eficiencia</th>
+          </tr></thead>
+          <tbody id="tbl-linea"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">Planta de Asesores por Supervisor</div>
+  <div class="card col-12">
+    <div class="card-title"><span class="dot"></span>Asesores activos (Corte 14-May)</div>
+    <div id="planta-bars" class="hbar-list" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 3: ANÁLISIS TEMPORAL
+═══════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-temporal">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Comportamiento Temporal</div>
+      <div class="sec-sub">Tendencias diarias · Semanales · Por día de registro</div>
+    </div>
+  </div>
+
+  <div class="divider">Tendencia por Día de Seguimiento (DIA SEG)</div>
+  <div class="grid-12">
+    <div class="card col-12">
+      <div class="card-title"><span class="dot"></span>Terminadas · Anuladas · Pendientes — Evolución Diaria (días 1–13)</div>
+      <canvas id="ch-diario" style="max-height:300px;"></canvas>
+    </div>
+  </div>
+
+  <div class="divider">Tendencia por Día de Registro</div>
+  <div class="grid-12">
+    <div class="card col-12">
+      <div class="card-title"><span class="dot"></span>Terminadas · Anuladas · Pendientes — Por Día de Registro (días 1–30)</div>
+      <canvas id="ch-regdia" style="max-height:300px;"></canvas>
+    </div>
+  </div>
+
+  <div class="divider">Corte Semanal</div>
+  <div class="grid-12">
+    <div class="card col-8">
+      <div class="card-title"><span class="dot"></span>Volumen por Semana</div>
+      <canvas id="ch-semana"></canvas>
+    </div>
+    <div class="card col-4">
+      <div class="card-title"><span class="dot"></span>Resumen Semanas</div>
+      <div class="tbl-wrap" style="margin-top:4px;">
+        <table>
+          <thead><tr><th>Semana</th><th>Term</th><th>Anul</th><th>Pend</th><th>Efic</th></tr></thead>
+          <tbody id="tbl-semana"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 4: ASESORES
+═══════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-asesores">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Gestión de Asesores</div>
+      <div class="sec-sub">Rendimiento individual · Ranking · Focos de intervención</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+    <div class="kpi k-ases">
+      <div class="kpi-label">Total Asesores Planta</div>
+      <div class="kpi-value">100</div>
+      <div class="kpi-sub">activos al 14-may</div>
+    </div>
+    <div class="kpi k-term">
+      <div class="kpi-label">Top Asesor (volumen)</div>
+      <div class="kpi-value">84</div>
+      <div class="kpi-sub">J.F. González Hdz.</div>
+    </div>
+    <div class="kpi k-efic">
+      <div class="kpi-label">Mejor Eficiencia</div>
+      <div class="kpi-value">100%</div>
+      <div class="kpi-sub">M.A. Mendoza / Anderson M.</div>
+    </div>
+    <div class="kpi k-anul">
+      <div class="kpi-label">Asesores Foco (&lt;70%)</div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-sub">requieren intervención</div>
+      <span class="kpi-tag bad">Acción inmediata</span>
+    </div>
+  </div>
+
+  <div class="divider">Ranking Completo de Asesores</div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Asesor</th><th>Supervisor</th>
+          <th>Total</th><th>Term</th><th>Anul</th><th>Pend</th><th>Eficiencia</th>
+        </tr></thead>
+        <tbody id="tbl-asesores"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider">Asesores Foco — Intervención Prioritaria</div>
+  <div class="foco-list" id="foco-asesores"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 5: QUIEBRES
+═══════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-quiebres">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Análisis de Quiebres y Cancelaciones</div>
+      <div class="sec-sub">Motivos · Atribuibilidad · Impacto por Supervisor</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+    <div class="kpi k-anul">
+      <div class="kpi-label">Total Quiebres</div>
+      <div class="kpi-value">301</div>
+      <div class="kpi-sub">órdenes canceladas</div>
+    </div>
+    <div class="kpi k-pend">
+      <div class="kpi-label">Principal Causa</div>
+      <div class="kpi-value" style="font-size:22px;">CARRUSEL</div>
+      <div class="kpi-sub">91 casos — fraude SOM</div>
+      <span class="kpi-tag bad">30.2% de quiebres</span>
+    </div>
+    <div class="kpi k-total">
+      <div class="kpi-label">Atribuible Asesor</div>
+      <div class="kpi-value">78</div>
+      <div class="kpi-sub">25.9% — gestionable</div>
+      <span class="kpi-tag warn">Plan de trabajo</span>
+    </div>
+    <div class="kpi k-empa">
+      <div class="kpi-label">Atribuible Técnico</div>
+      <div class="kpi-value">63</div>
+      <div class="kpi-sub">20.9% — infraestructura</div>
+    </div>
+  </div>
+
+  <div class="divider">Top Motivos de Quiebre</div>
+  <div class="grid-12">
+    <div class="card col-7">
+      <div class="card-title"><span class="dot"></span>Ranking de Causas de Cancelación</div>
+      <div id="quiebre-bars" class="hbar-list"></div>
+    </div>
+    <div class="card col-5">
+      <div class="card-title"><span class="dot"></span>Distribución por Atribuible</div>
+      <canvas id="ch-atrib"></canvas>
+    </div>
+  </div>
+
+  <div class="divider">Atribuibles Gestionables (excl. Carrusel)</div>
+  <div class="grid-12">
+    <div class="card col-12">
+      <div class="card-title"><span class="dot"></span>Impacto por Tipo de Atribuible</div>
+      <canvas id="ch-atrib-bar" style="max-height:200px;"></canvas>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 6: LEGALIZACIONES
+═══════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-legalizaciones">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Agendamiento y Legalizaciones</div>
+      <div class="sec-sub">Embudo · Pagos · Control de Mora · Pendientes</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+    <div class="kpi k-total">
+      <div class="kpi-label">Total Legalizadas</div>
+      <div class="kpi-value">3,370</div>
+      <div class="kpi-sub">BBDD LEG completa</div>
+    </div>
+    <div class="kpi k-term">
+      <div class="kpi-label">Leg. Grabación</div>
+      <div class="kpi-value">1,966</div>
+      <div class="kpi-sub">58.3% del total</div>
+    </div>
+    <div class="kpi k-empa">
+      <div class="kpi-label">Leg. Autorización</div>
+      <div class="kpi-value">321</div>
+      <div class="kpi-sub">9.5% del total</div>
+    </div>
+    <div class="kpi k-pend">
+      <div class="kpi-label">Pdte Legalizar</div>
+      <div class="kpi-value">1,083</div>
+      <div class="kpi-sub">32.1% — en gestión</div>
+      <span class="kpi-tag warn">Monitorear mora</span>
+    </div>
+    <div class="kpi k-efic">
+      <div class="kpi-label">Pago 100%</div>
+      <div class="kpi-value">58.8%</div>
+      <div class="kpi-sub">593 de 1,009 (BBDD)</div>
+      <span class="kpi-tag good">Bien</span>
+    </div>
+    <div class="kpi k-anul">
+      <div class="kpi-label">Pago 0%</div>
+      <div class="kpi-value">40.5%</div>
+      <div class="kpi-sub">409 registros sin pago</div>
+      <span class="kpi-tag bad">Acción urgente</span>
+    </div>
+  </div>
+
+  <div class="divider">Embudo de Legalizaciones</div>
+  <div class="grid-12">
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Estados de Legalizaciones (BBDD LEG)</div>
+      <canvas id="ch-leg-donut"></canvas>
+    </div>
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Legalizaciones por Regional</div>
+      <canvas id="ch-leg-regional"></canvas>
+    </div>
+  </div>
+
+  <div class="divider">Control Financiero — Distribución de Pago</div>
+  <div class="grid-12">
+    <div class="card col-5">
+      <div class="card-title"><span class="dot"></span>% Pago sobre Legalizadas (BBDD)</div>
+      <canvas id="ch-pago"></canvas>
+    </div>
+    <div class="card col-7">
+      <div class="card-title"><span class="dot"></span>Pendientes por Días de Mora (BBDD LEG · PDTE LEGALIZAR)</div>
+      <div id="mora-wrap"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 7: GEOGRAFÍA & MIX
+═══════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-geografia">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Segmentación Geográfica y de Producto</div>
+      <div class="sec-sub">Departamentos · Regionales · Mix de Producto</div>
+    </div>
+  </div>
+
+  <div class="divider">Top 10 Departamentos</div>
+  <div class="grid-12">
+    <div class="card col-8">
+      <div class="card-title"><span class="dot"></span>Volumen y Eficiencia por Departamento</div>
+      <canvas id="ch-dpto-bar"></canvas>
+    </div>
+    <div class="card col-4">
+      <div class="card-title"><span class="dot"></span>Eficiencia por Departamento</div>
+      <div id="dpto-efic-bars" class="hbar-list"></div>
+    </div>
+  </div>
+
+  <div class="divider">Tabla Geográfica Detallada</div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Departamento</th><th>Total</th><th>Term</th><th>Anul</th>
+          <th>Pend</th><th>Eficiencia</th>
+        </tr></thead>
+        <tbody id="tbl-dpto"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider">Mix de Producto</div>
+  <div class="grid-12">
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Distribución BA vs TRIO</div>
+      <canvas id="ch-mix"></canvas>
+    </div>
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Comparativa de Eficiencia por Producto</div>
+      <canvas id="ch-prod-efic-bar"></canvas>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECCIÓN 8: INSIGHTS & PROYECCIÓN
+═══════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-insights">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Insights · Focos · Proyecciones</div>
+      <div class="sec-sub">Inteligencia gerencial basada en datos · Mayo 2026</div>
+    </div>
+  </div>
+
+  <div class="divider">Proyección de Cierre de Mes</div>
+  <div class="grid-12">
+    <div class="card col-4" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;">
+      <div class="gauge-num">1,200</div>
+      <div class="gauge-label">Proyección terminadas<br>al cierre de Mayo 2026</div>
+      <div class="progress-stack" style="width:100%;">
+        <div class="progress-item">
+          <span class="progress-label" style="font-size:11px;">Avance</span>
+          <div class="progress-track"><div class="progress-fill" style="width:54%;background:var(--navy);"></div></div>
+          <span class="progress-val num-navy">54%</span>
+        </div>
+        <div class="progress-item">
+          <span class="progress-label" style="font-size:11px;">Terminadas</span>
+          <div class="progress-track"><div class="progress-fill" style="width:65%;background:var(--green);"></div></div>
+          <span class="progress-val num-green">650</span>
+        </div>
+        <div class="progress-item">
+          <span class="progress-label" style="font-size:11px;">Pendientes</span>
+          <div class="progress-track"><div class="progress-fill" style="width:19%;background:var(--amber);"></div></div>
+          <span class="progress-val num-amber">188</span>
+        </div>
+        <div class="progress-item">
+          <span class="progress-label" style="font-size:11px;">Anuladas</span>
+          <div class="progress-track"><div class="progress-fill" style="width:17%;background:var(--red);"></div></div>
+          <span class="progress-val num-red">171</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-8" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card" style="flex:1;">
+        <div class="card-title"><span class="dot"></span>Proyección de Afectaciones estimadas al cierre</div>
+        <canvas id="ch-forecast" style="max-height:200px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">Puntos Críticos y Afectaciones Principales</div>
+  <div class="insight-grid">
+    <div class="insight">
+      <div class="insight-icon">🔴</div>
+      <div class="insight-title">CARRUSEL — Principal Fuga Operativa</div>
+      <div class="insight-metric">91 casos</div>
+      <div class="insight-body">El Carrusel representa el 30.2% de todos los quiebres. Estas órdenes fraudulentas son identificadas y canceladas por SOM. Se estima que al cierre del mes puede alcanzar <strong>~170 casos</strong> si el ritmo no cambia. Requiere coordinación directa con el área de Fraude y Calidad.</div>
+    </div>
+    <div class="insight warn">
+      <div class="insight-icon">🟡</div>
+      <div class="insight-title">Eficiencia por debajo de meta (79.2% vs 85%)</div>
+      <div class="insight-metric">-5.8 pp</div>
+      <div class="insight-body">La eficiencia global se ubica en 79.2%, 5.8 puntos por debajo de la meta del 85%. La regional CARIBE lidera el rezago con 66.4% de eficiencia. El mes tiene 11 días hábiles aún disponibles para recuperación.</div>
+    </div>
+    <div class="insight warn">
+      <div class="insight-icon">🟡</div>
+      <div class="insight-title">1,083 Legalizaciones Pendientes con Mora Creciente</div>
+      <div class="insight-metric">3.1 días avg</div>
+      <div class="insight-body">El 32.1% de la cartera LEG está sin legalizar. 10 registros superan 8 días de mora (crítico). La concentración de mora en días 1-5 sugiere falta de seguimiento en primera gestión. Implementar alertas tempranas en día 3.</div>
+    </div>
+    <div class="insight">
+      <div class="insight-icon">🔴</div>
+      <div class="insight-title">40.5% de Órdenes sin Pago Registrado</div>
+      <div class="insight-metric">409 registros</div>
+      <div class="insight-body">Existe una fuga financiera significativa: 409 registros muestran 0% de pago. Urge cruzar contra el sistema de facturación para determinar si son casos no-cruzados o pagos no aplicados. Impacto potencial en comisiones y KPIs financieros.</div>
+    </div>
+    <div class="insight good">
+      <div class="insight-icon">🟢</div>
+      <div class="insight-title">Semana 1 — Récord de Producción</div>
+      <div class="insight-metric">399 term.</div>
+      <div class="insight-body">La Semana 1 registró 399 terminadas con solo 90 anulaciones, la mayor producción del mes. La Semana 2 muestra una desaceleración (137 terminadas, 133 pendientes), posiblemente por volumen que migra a siguiente corte.</div>
+    </div>
+    <div class="insight info">
+      <div class="insight-icon">🔵</div>
+      <div class="insight-title">BA supera a TRIO en volumen y eficiencia</div>
+      <div class="insight-metric">80.5% vs 76.6%</div>
+      <div class="insight-body">Banda Ancha (654 registros, 80.5% eficiencia) supera en ambas métricas a TRIO (355 registros, 76.6%). Revisar si el mix de TRIO está siendo bien asesorado o si existe brecha de calidad en ese empaquetado.</div>
+    </div>
+  </div>
+
+  <div class="divider">Focos de Acción — Supervisores y Asesores</div>
+  <div class="grid-12">
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Supervisores Foco — Regional de Bajo Desempeño</div>
+      <div class="foco-list">
+        <div class="foco-item">
+          <div>
+            <div class="foco-name">Regional CARIBE</div>
+            <div class="foco-sup">Eficiencia: 66.4% — Meta: 85%</div>
+          </div>
+          <div class="foco-right">
+            <span class="badge badge-red">-18.6 pp</span>
+          </div>
+        </div>
+        <div class="foco-item" style="background:var(--amber-light);border-color:rgba(245,158,11,.3);">
+          <div>
+            <div class="foco-name">Regional NOROCCIDENTE</div>
+            <div class="foco-sup">Eficiencia: 78.8% — Meta: 85%</div>
+          </div>
+          <div class="foco-right">
+            <span class="badge badge-amber">-6.2 pp</span>
+          </div>
+        </div>
+        <div class="foco-item" style="background:var(--amber-light);border-color:rgba(245,158,11,.3);">
+          <div>
+            <div class="foco-name">Michael Rodriguez (Supervisor)</div>
+            <div class="foco-sup">Eficiencia: 76.9% — Solo 19 órdenes activas</div>
+          </div>
+          <div class="foco-right">
+            <span class="badge badge-amber">Monitorear</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card col-6">
+      <div class="card-title"><span class="dot"></span>Asesores Foco — Plan de Trabajo Inmediato</div>
+      <div class="foco-list" id="foco-insights"></div>
+    </div>
+  </div>
+
+  <div class="divider">Sugerencias Accionables</div>
+  <div class="insight-grid">
+    <div class="insight info">
+      <div class="insight-icon">📌</div>
+      <div class="insight-title">Acción 1 — Campaña anti-Carrusel</div>
+      <div class="insight-body">Implementar validación previa de identidad en las órdenes del Canal Online. Coordinar con el equipo de fraude la revisión de los 91 casos actuales y establecer alertas automáticas para patrones de reingreso sospechosos.</div>
+    </div>
+    <div class="insight info">
+      <div class="insight-icon">📌</div>
+      <div class="insight-title">Acción 2 — Intervención CARIBE</div>
+      <div class="insight-body">Definir plan de trabajo específico para CARIBE (66.4% eficiencia). Revisar calidad de agendamiento, disponibilidad de red FTTH y causas de "No existe red" que generan quiebres técnicos en la región.</div>
+    </div>
+    <div class="insight info">
+      <div class="insight-icon">📌</div>
+      <div class="insight-title">Acción 3 — Gestión de Legalizaciones Pendientes</div>
+      <div class="insight-body">Activar seguimiento diario a los 1,083 PDTE LEGALIZAR. Priorizar los 10 registros con más de 8 días de mora. Asignar gestor dedicado para cierre de cartera antes del día 20 del mes.</div>
+    </div>
+    <div class="insight info">
+      <div class="insight-icon">📌</div>
+      <div class="insight-title">Acción 4 — Plan de Mejora para Asesores Foco</div>
+      <div class="insight-body">Los asesores Katherine Saenz (33.3%), Sharay Londoño (55.6%) y Martha Lucía Ramírez (66.7%) requieren acompañamiento. Diseñar plan de escucha de llamadas, retroalimentación diaria y seguimiento semanal de efectividad.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+// ─── DATOS ────────────────────────────────────────────────
+const D = {"kpis":{"total":1009,"terminadas":650,"anuladas":171,"pendientes":188,"empaquetadas":42,"eficiencia":79.2,"dias_seg":13,"dias_totales":24,"proyeccion":1200},"byDay":[{"dia":1,"TERM":14,"ANUL":2,"PEND":0},{"dia":2,"TERM":56,"ANUL":9,"PEND":0},{"dia":3,"TERM":20,"ANUL":7,"PEND":0},{"dia":4,"TERM":78,"ANUL":10,"PEND":0},{"dia":5,"TERM":68,"ANUL":6,"PEND":0},{"dia":6,"TERM":58,"ANUL":6,"PEND":0},{"dia":7,"TERM":62,"ANUL":23,"PEND":0},{"dia":8,"TERM":66,"ANUL":14,"PEND":0},{"dia":9,"TERM":56,"ANUL":26,"PEND":0},{"dia":10,"TERM":12,"ANUL":28,"PEND":0},{"dia":11,"TERM":67,"ANUL":8,"PEND":0},{"dia":12,"TERM":45,"ANUL":19,"PEND":0},{"dia":13,"TERM":48,"ANUL":13,"PEND":188}],"byRegDay":[{"dia":1,"TERM":34,"ANUL":5,"PEND":1},{"dia":2,"TERM":44,"ANUL":13,"PEND":3},{"dia":3,"TERM":27,"ANUL":3,"PEND":2},{"dia":4,"TERM":71,"ANUL":17,"PEND":5},{"dia":5,"TERM":63,"ANUL":11,"PEND":4},{"dia":6,"TERM":61,"ANUL":16,"PEND":12},{"dia":7,"TERM":55,"ANUL":12,"PEND":7},{"dia":8,"TERM":45,"ANUL":14,"PEND":7},{"dia":9,"TERM":36,"ANUL":3,"PEND":9},{"dia":10,"TERM":19,"ANUL":5,"PEND":2},{"dia":11,"TERM":47,"ANUL":9,"PEND":25},{"dia":12,"TERM":27,"ANUL":6,"PEND":39},{"dia":13,"TERM":8,"ANUL":5,"PEND":58},{"dia":14,"TERM":1,"ANUL":1,"PEND":0},{"dia":27,"TERM":14,"ANUL":1,"PEND":2},{"dia":28,"TERM":13,"ANUL":8,"PEND":2},{"dia":29,"TERM":27,"ANUL":11,"PEND":3},{"dia":30,"TERM":50,"ANUL":8,"PEND":2}],"byWeek":[{"semana":"Bolsa Mes Anterior","TERM":114,"ANUL":55,"PEND":16},{"semana":"Semana 1","TERM":399,"ANUL":90,"PEND":39},{"semana":"Semana 2","TERM":137,"ANUL":26,"PEND":133}],"byRegional":[{"regional":"BOGOTA","TERM":320,"ANUL":69,"PEND":97,"EMPA":20,"EFIC":82.3},{"regional":"CARIBE","TERM":71,"ANUL":36,"PEND":28,"EMPA":5,"EFIC":66.4},{"regional":"NOROCCIDENTE","TERM":134,"ANUL":36,"PEND":38,"EMPA":9,"EFIC":78.8},{"regional":"ORIENTE","TERM":54,"ANUL":14,"PEND":11,"EMPA":2,"EFIC":79.4},{"regional":"SUR","TERM":71,"ANUL":16,"PEND":14,"EMPA":6,"EFIC":81.6}],"bySupervisor":[{"supervisor":"Marisol Avella","TERM":469,"ANUL":117,"PEND":132,"EMPA":36,"TOTAL":718,"EFIC":80.0},{"supervisor":"Michael Rodriguez","TERM":10,"ANUL":3,"PEND":6,"EMPA":4,"TOTAL":19,"EFIC":76.9},{"supervisor":"No Cruza","TERM":171,"ANUL":51,"PEND":50,"EMPA":2,"TOTAL":272,"EFIC":77.0}],"byProducto":[{"producto":"BA","TERM":434,"ANUL":105,"PEND":115,"EFIC":80.5},{"producto":"TRIO","TERM":216,"ANUL":66,"PEND":73,"EFIC":76.6}],"quiebres":[{"quiebre":"CARRUSEL","N":91},{"quiebre":"QC - DIRECCION ERRADA","N":24},{"quiebre":"QC - CLIENTE DESISTE / ELIGE LA COMPETENCIA","N":19},{"quiebre":"QC - CLIENTE DESISTE / DEMORAS INSTALACION","N":17},{"quiebre":"QC - NO SE LOGRO CONTACTO PARA AGENDAR","N":16},{"quiebre":"QT - NO EXISTE RED FTTH","N":16},{"quiebre":"QC - PEDIDO DUPLICADO","N":16},{"quiebre":"QC - SIN PERMISO PARA INSTALAR","N":14},{"quiebre":"QC - CLIENTE DESISTE","N":12},{"quiebre":"QC - CLIENTE NO SOLICITO EL SERVICIO","N":12},{"quiebre":"QT - RECURSOS MAL APROVISIONADOS","N":10},{"quiebre":"QT - DISTANCIA EXCEDIDA","N":9}],"atribuible":[{"tipo":"CARRUSEL","N":91},{"tipo":"ASESOR","N":78},{"tipo":"TECNICO","N":63},{"tipo":"CLIENTE","N":53},{"tipo":"AGENDAMIENTO","N":16}],"asesores":[{"nombre":"JOSE FRANCISCO GONZALEZ HERNANDEZ","TERM":52,"ANUL":12,"PEND":20,"SUPERVISOR":"No Cruza","TOTAL":84,"EFIC":81.2},{"nombre":"JHOJAN ALEXANDER JIMENEZ MELO","TERM":46,"ANUL":13,"PEND":13,"SUPERVISOR":"Marisol Avella","TOTAL":72,"EFIC":78.0},{"nombre":"VIVIANA PATRICIA BENAVIDES ZUNIGA","TERM":50,"ANUL":13,"PEND":8,"SUPERVISOR":"Marisol Avella","TOTAL":71,"EFIC":79.4},{"nombre":"BRAYAN NICOLAS SIERRA RODRIGUEZ","TERM":38,"ANUL":14,"PEND":18,"SUPERVISOR":"Marisol Avella","TOTAL":70,"EFIC":73.1},{"nombre":"WALTER BERRIO GONZALEZ","TERM":41,"ANUL":4,"PEND":11,"SUPERVISOR":"Marisol Avella","TOTAL":56,"EFIC":91.1},{"nombre":"NOHORA AMADO LONDONO","TERM":43,"ANUL":6,"PEND":3,"SUPERVISOR":"Marisol Avella","TOTAL":52,"EFIC":87.8},{"nombre":"ANDRES LEONARDO BARRERA ARGUMEDO","TERM":33,"ANUL":10,"PEND":8,"SUPERVISOR":"Marisol Avella","TOTAL":51,"EFIC":76.7},{"nombre":"DAVID ALEJANDRO SUAREZ LOZADA","TERM":33,"ANUL":7,"PEND":8,"SUPERVISOR":"Marisol Avella","TOTAL":48,"EFIC":82.5},{"nombre":"SERGIO ANDREY RICO DIAZ","TERM":29,"ANUL":9,"PEND":7,"SUPERVISOR":"Marisol Avella","TOTAL":45,"EFIC":76.3},{"nombre":"JOYNNER FERNANDO BRISENO OLIVIERI","TERM":28,"ANUL":10,"PEND":7,"SUPERVISOR":"Marisol Avella","TOTAL":45,"EFIC":73.7},{"nombre":"JOSE LUIDANDER RODRIGUEZ BELLO","TERM":26,"ANUL":5,"PEND":11,"SUPERVISOR":"Marisol Avella","TOTAL":42,"EFIC":83.9},{"nombre":"JULIAN ALEXANDER CASTELLANOS CASTELLANOS","TERM":25,"ANUL":5,"PEND":8,"SUPERVISOR":"Marisol Avella","TOTAL":38,"EFIC":83.3},{"nombre":"SARA CRUZ ACHURY","TERM":21,"ANUL":4,"PEND":7,"SUPERVISOR":"No Cruza","TOTAL":32,"EFIC":84.0},{"nombre":"SHARON NATALIA GONZALEZ CAAADULCE","TERM":18,"ANUL":7,"PEND":4,"SUPERVISOR":"Marisol Avella","TOTAL":29,"EFIC":72.0},{"nombre":"ELVIA ARSENIA GUERRERO","TERM":19,"ANUL":4,"PEND":2,"SUPERVISOR":"Marisol Avella","TOTAL":25,"EFIC":82.6},{"nombre":"LEITHY YADIRA GUERRERO RAMIREZ","TERM":17,"ANUL":4,"PEND":4,"SUPERVISOR":"No Cruza","TOTAL":25,"EFIC":81.0},{"nombre":"JOHAN SEBASTIAN DUARTE CORREA","TERM":16,"ANUL":6,"PEND":3,"SUPERVISOR":"Marisol Avella","TOTAL":25,"EFIC":72.7},{"nombre":"TATIANA PERILLA ALFONSO","TERM":15,"ANUL":3,"PEND":7,"SUPERVISOR":"Marisol Avella","TOTAL":25,"EFIC":83.3},{"nombre":"JORGE ANDRES ROMERO LOPERA","TERM":15,"ANUL":6,"PEND":3,"SUPERVISOR":"No Cruza","TOTAL":24,"EFIC":71.4},{"nombre":"MIGUEL ANGEL MENDOZA GUERRERO","TERM":9,"ANUL":0,"PEND":14,"SUPERVISOR":"Marisol Avella","TOTAL":23,"EFIC":100.0},{"nombre":"JEISON DAVID MONTOYA CRUZ","TERM":12,"ANUL":4,"PEND":3,"SUPERVISOR":"No Cruza","TOTAL":19,"EFIC":75.0},{"nombre":"PAOLA ANDREA CORREDOR BELTRAN","TERM":10,"ANUL":3,"PEND":3,"SUPERVISOR":"No Cruza","TOTAL":16,"EFIC":76.9},{"nombre":"MARTHA LUCIA RAMIREZ NIETO","TERM":10,"ANUL":5,"PEND":1,"SUPERVISOR":"No Cruza","TOTAL":16,"EFIC":66.7},{"nombre":"YOLIMA VANESSA CARDALES SARMIENTO","TERM":11,"ANUL":2,"PEND":3,"SUPERVISOR":"No Cruza","TOTAL":16,"EFIC":84.6},{"nombre":"SHARAY LONDONO CASTANEDA","TERM":5,"ANUL":4,"PEND":3,"SUPERVISOR":"No Cruza","TOTAL":12,"EFIC":55.6},{"nombre":"GLADYS AURORA VELASQUEZ CUCAITA","TERM":6,"ANUL":2,"PEND":1,"SUPERVISOR":"No Cruza","TOTAL":9,"EFIC":75.0},{"nombre":"NATALY ROJAS GONZALEZ","TERM":6,"ANUL":2,"PEND":0,"SUPERVISOR":"No Cruza","TOTAL":8,"EFIC":75.0},{"nombre":"ROSANA THALIA DONADO CORONEL","TERM":5,"ANUL":1,"PEND":1,"SUPERVISOR":"No Cruza","TOTAL":7,"EFIC":83.3},{"nombre":"DAYANA KARINA ORTIZ ACOSTA","TERM":4,"ANUL":1,"PEND":0,"SUPERVISOR":"Michael Rodriguez","TOTAL":5,"EFIC":80.0},{"nombre":"KATHERINE SAENZ SAENZ","TERM":1,"ANUL":2,"PEND":0,"SUPERVISOR":"No Cruza","TOTAL":3,"EFIC":33.3},{"nombre":"ANDERSON JAIR MONTOYA TUBERQUIA","TERM":3,"ANUL":0,"PEND":0,"SUPERVISOR":"Michael Rodriguez","TOTAL":3,"EFIC":100.0},{"nombre":"HUGO FABIAN MONCAYO CARDENAS","TERM":1,"ANUL":0,"PEND":2,"SUPERVISOR":"Michael Rodriguez","TOTAL":3,"EFIC":100.0}],"asesoresFoco":[{"nombre":"KATHERINE SAENZ SAENZ","TERM":1,"ANUL":2,"PEND":0,"SUPERVISOR":"No Cruza","TOTAL":3,"EFIC":33.3},{"nombre":"SHARAY LONDONO CASTANEDA","TERM":5,"ANUL":4,"PEND":3,"SUPERVISOR":"No Cruza","TOTAL":12,"EFIC":55.6},{"nombre":"MARTHA LUCIA RAMIREZ NIETO","TERM":10,"ANUL":5,"PEND":1,"SUPERVISOR":"No Cruza","TOTAL":16,"EFIC":66.7}],"legEstado":[{"estado":"LEGALIZADA AUT","N":321},{"estado":"LEGALIZADA GRABACION","N":1966},{"estado":"PDTE LEGALIZAR","N":1083}],"pagoDist":[{"pago":"100%","N":593},{"pago":0,"N":409},{"pago":"50%","N":7}],"pdteLeg":[{"dias":1,"N":293},{"dias":2,"N":244},{"dias":3,"N":55},{"dias":4,"N":207},{"dias":5,"N":159},{"dias":6,"N":92},{"dias":7,"N":18},{"dias":8,"N":5},{"dias":9,"N":5},{"dias":11,"N":4},{"dias":12,"N":1}],"byDpto":[{"dpto":"Bogotá D.C","TERM":292,"ANUL":62,"PEND":88,"EFIC":82.5,"TOTAL":442},{"dpto":"Antioquia","TERM":98,"ANUL":26,"PEND":31,"EFIC":79.0,"TOTAL":155},{"dpto":"Valle del Cauca","TERM":56,"ANUL":14,"PEND":14,"EFIC":80.0,"TOTAL":84},{"dpto":"Atlántico","TERM":44,"ANUL":18,"PEND":18,"EFIC":71.0,"TOTAL":80},{"dpto":"Cundinamarca","TERM":28,"ANUL":7,"PEND":9,"EFIC":80.0,"TOTAL":44},{"dpto":"Santander","TERM":29,"ANUL":7,"PEND":7,"EFIC":80.6,"TOTAL":43},{"dpto":"Bolívar","TERM":11,"ANUL":6,"PEND":7,"EFIC":64.7,"TOTAL":24},{"dpto":"Tolima","TERM":14,"ANUL":6,"PEND":0,"EFIC":70.0,"TOTAL":20},{"dpto":"Meta","TERM":10,"ANUL":5,"PEND":3,"EFIC":66.7,"TOTAL":18},{"dpto":"Risaralda","TERM":9,"ANUL":2,"PEND":3,"EFIC":81.8,"TOTAL":14}],"byLinea":[{"linea":"Fija","TERM":469,"ANUL":117,"PEND":132,"EFIC":80.0},{"linea":"Móvil","TERM":10,"ANUL":3,"PEND":6,"EFIC":76.9},{"linea":"No Cruza","TERM":171,"ANUL":51,"PEND":50,"EFIC":77.0}],"plantaSupvisor":[{"supervisor":"Maria Acosta","N":3},{"supervisor":"Marisol Avella","N":35},{"supervisor":"Michael Rodriguez","N":60},{"supervisor":"Yeni Moncada","N":2}],"totalAsesores":100,"legByRegional":[{"regional":"BOGOTA","estado":"LEGALIZADA AUT","N":149},{"regional":"BOGOTA","estado":"LEGALIZADA GRABACION","N":1006},{"regional":"BOGOTA","estado":"PDTE LEGALIZAR","N":543},{"regional":"CARIBE","estado":"LEGALIZADA AUT","N":45},{"regional":"CARIBE","estado":"LEGALIZADA GRABACION","N":234},{"regional":"CARIBE","estado":"PDTE LEGALIZAR","N":132},{"regional":"NOROCCIDENTE","estado":"LEGALIZADA AUT","N":52},{"regional":"NOROCCIDENTE","estado":"LEGALIZADA GRABACION","N":330},{"regional":"NOROCCIDENTE","estado":"PDTE LEGALIZAR","N":186},{"regional":"ORIENTE","estado":"LEGALIZADA AUT","N":35},{"regional":"ORIENTE","estado":"LEGALIZADA GRABACION","N":192},{"regional":"ORIENTE","estado":"PDTE LEGALIZAR","N":92},{"regional":"SUR","estado":"LEGALIZADA AUT","N":40},{"regional":"SUR","estado":"LEGALIZADA GRABACION","N":204},{"regional":"SUR","estado":"PDTE LEGALIZAR","N":130}]};
+
+// ─── COLORES ──────────────────────────────────────────────
 const C = {
-  accent:  '#00e5ff',
-  accent2: '#ff6b35',
-  accent3: '#7c3aed',
-  green:   '#22d3a5',
-  red:     '#f43f5e',
-  yellow:  '#f59e0b',
-  muted:   '#64748b',
+  navy:'#001e50', red:'#e8001d', blue:'#0050c8', teal:'#00b4d8',
+  green:'#10b981', amber:'#f59e0b', purple:'#7c3aed', gray:'#94a3b8',
+  redA:'rgba(232,0,29,.75)', greenA:'rgba(16,185,129,.75)', amberA:'rgba(245,158,11,.75)',
+  blueA:'rgba(0,80,200,.75)', tealA:'rgba(0,180,216,.75)', navyA:'rgba(0,30,80,.75)',
 };
 
-// ── CHART INSTANCES ────────────────────────────────────────
-let charts = {};
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = '#e2e5eb';
+Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+Chart.defaults.font.size = 11;
+const chs = {};
+function dc(id){ if(chs[id]){chs[id].destroy();delete chs[id];} }
 
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+// ─── NAV ─────────────────────────────────────────────────
+function showSection(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  event.target.classList.add('active');
 }
 
-// ── HELPERS ────────────────────────────────────────────────
-function pct(n, d) { return d ? ((n / d) * 100).toFixed(1) : '0.0'; }
-function groupBy(arr, key) {
-  return arr.reduce((acc, row) => {
-    const k = row[key] || '(vacío)';
-    if (!acc[k]) acc[k] = [];
-    acc[k].push(row);
-    return acc;
-  }, {});
+// ─── HELPERS ─────────────────────────────────────────────
+function eficBadge(e){
+  if(e>=85) return `<span class="badge badge-green">▲ ${e}%</span>`;
+  if(e>=70) return `<span class="badge badge-amber">◆ ${e}%</span>`;
+  return `<span class="badge badge-red">▼ ${e}%</span>`;
 }
-function sumKey(arr, key) { return arr.reduce((s, r) => s + (Number(r[key]) || 0), 0); }
-
-// ── POPULATE FILTERS ───────────────────────────────────────
-function populateFilters(data) {
-  const semanas   = [...new Set(data.map(r => r['SEMANA']))].filter(Boolean).sort();
-  const regionals = [...new Set(data.map(r => r['Regional']))].filter(Boolean).sort();
-  const supervisors = [...new Set(data.map(r => r['SUPERVISOR']))].filter(Boolean).sort();
-  const productos = [...new Set(data.map(r => r['Producto']))].filter(Boolean).sort();
-
-  function fillSelect(id, vals) {
-    const el = document.getElementById(id);
-    vals.forEach(v => {
-      const o = document.createElement('option');
-      o.value = o.textContent = v;
-      el.appendChild(o);
-    });
-  }
-  fillSelect('f-semana', semanas);
-  fillSelect('f-regional', regionals);
-  fillSelect('f-supervisor', supervisors);
-  fillSelect('f-producto', productos);
+function eficFillClass(e){ return e>=85?'high':e>=70?'mid':'low'; }
+function hbar(items, valKey, color=''){
+  const max = Math.max(...items.map(i=>i[valKey]),1);
+  return items.map(i=>`
+    <div class="hbar-item">
+      <div class="hbar-meta">
+        <span class="hbar-name" title="${i.name||i.regional||i.supervisor||i.dpto||''}">${i.label||i.name||i.regional||i.supervisor||i.dpto}</span>
+        <span class="hbar-val">${typeof i[valKey]==='number'&&i[valKey]<5?(i[valKey]+'%'):(i[valKey])}</span>
+      </div>
+      <div class="hbar-track"><div class="hbar-fill ${color}" style="width:${(i[valKey]/max*100).toFixed(1)}%"></div></div>
+    </div>`).join('');
 }
 
-// ── FILTER DATA ────────────────────────────────────────────
-function getFiltered() {
-  const sem = document.getElementById('f-semana').value;
-  const reg = document.getElementById('f-regional').value;
-  const sup = document.getElementById('f-supervisor').value;
-  const pro = document.getElementById('f-producto').value;
+// ─── RENDER FUNCTIONS ────────────────────────────────────
 
-  return RAW_DATA.filter(r =>
-    (!sem || r['SEMANA'] === sem) &&
-    (!reg || r['Regional'] === reg) &&
-    (!sup || r['SUPERVISOR'] === sup) &&
-    (!pro || r['Producto'] === pro)
-  );
-}
-
-// ── RENDER KPIs ────────────────────────────────────────────
-function renderKPIs(data) {
-  const total = data.length;
-  const term  = sumKey(data, 'TERMINADA');
-  const anul  = sumKey(data, 'ANULADA');
-  const pend  = sumKey(data, 'PENDIENTE');
-  const empa  = sumKey(data, 'EMPAQUETADAS');
-  const efic  = term + anul > 0 ? ((term / (term + anul)) * 100).toFixed(1) : '0.0';
-
-  document.getElementById('kpi-total').textContent = total.toLocaleString();
-  document.getElementById('kpi-term').textContent  = term.toLocaleString();
-  document.getElementById('kpi-term-pct').textContent = pct(term, total) + '% del total';
-  document.getElementById('kpi-anul').textContent  = anul.toLocaleString();
-  document.getElementById('kpi-anul-pct').textContent = pct(anul, total) + '% del total';
-  document.getElementById('kpi-pend').textContent  = pend.toLocaleString();
-  document.getElementById('kpi-pend-pct').textContent = pct(pend, total) + '% del total';
-  document.getElementById('kpi-empa').textContent  = empa.toLocaleString();
-  document.getElementById('kpi-efic').textContent  = efic + '%';
-}
-
-// ── CHART: DIARIO ──────────────────────────────────────────
-function renderDiario(data) {
-  destroyChart('diario');
-  const byDay = groupBy(data, 'DIA SEG');
-  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b);
-  const term = days.map(d => sumKey(byDay[d], 'TERMINADA'));
-  const anul = days.map(d => sumKey(byDay[d], 'ANULADA'));
-  const pend = days.map(d => sumKey(byDay[d], 'PENDIENTE'));
-
-  charts['diario'] = new Chart(document.getElementById('chart-diario'), {
-    type: 'bar',
-    data: {
-      labels: days.map(d => 'D' + d),
-      datasets: [
-        { label: 'Terminadas', data: term, backgroundColor: C.green + 'cc', borderRadius: 4 },
-        { label: 'Anuladas',   data: anul, backgroundColor: C.red   + 'cc', borderRadius: 4 },
-        { label: 'Pendientes', data: pend, backgroundColor: C.yellow + 'cc', borderRadius: 4 },
+// RESUMEN
+function buildResumen(){
+  dc('reg-resumen');
+  const regs = D.byRegional.map(r=>r.regional);
+  chs['reg-resumen'] = new Chart(document.getElementById('ch-reg-resumen'),{
+    type:'bar', data:{
+      labels:regs,
+      datasets:[
+        {label:'Terminadas',data:D.byRegional.map(r=>r.TERM),backgroundColor:C.greenA,borderRadius:4},
+        {label:'Anuladas',  data:D.byRegional.map(r=>r.ANUL),backgroundColor:C.redA,  borderRadius:4},
+        {label:'Pendientes',data:D.byRegional.map(r=>r.PEND),backgroundColor:C.amberA,borderRadius:4},
       ]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        x: { stacked: true, grid: { display: false } },
-        y: { stacked: true, grid: { color: '#1f2e47' } }
-      }
-    }
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true}}}
   });
-}
 
-// ── CHART: DONUT ───────────────────────────────────────────
-function renderDonut(data) {
-  destroyChart('donut');
-  const term = sumKey(data, 'TERMINADA');
-  const anul = sumKey(data, 'ANULADA');
-  const pend = sumKey(data, 'PENDIENTE');
-
-  charts['donut'] = new Chart(document.getElementById('chart-donut'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Terminadas', 'Anuladas', 'Pendientes'],
-      datasets: [{
-        data: [term, anul, pend],
-        backgroundColor: [C.green + 'dd', C.red + 'dd', C.yellow + 'dd'],
-        borderColor: '#111827',
-        borderWidth: 3,
-        hoverOffset: 6,
-      }]
+  dc('donut-resumen');
+  chs['donut-resumen'] = new Chart(document.getElementById('ch-donut-resumen'),{
+    type:'doughnut', data:{
+      labels:['Terminadas','Anuladas','Pendientes'],
+      datasets:[{data:[650,171,188],backgroundColor:[C.greenA,C.redA,C.amberA],
+        borderColor:'#fff',borderWidth:3,hoverOffset:6}]
     },
-    options: {
-      responsive: true,
-      cutout: '65%',
-      plugins: {
-        legend: { position: 'bottom' },
-      }
-    }
+    options:{cutout:'65%',plugins:{legend:{position:'bottom'}}}
   });
+
+  // tabla regional
+  const tb = document.querySelector('#tbl-resumen-reg');
+  tb.innerHTML = D.byRegional.map(r=>`<tr>
+    <td><strong>${r.regional}</strong></td>
+    <td class="num num-navy">${r.TERM+r.ANUL+r.PEND}</td>
+    <td class="num num-green">${r.TERM}</td>
+    <td class="num num-red">${r.ANUL}</td>
+    <td class="num num-amber">${r.PEND}</td>
+    <td class="num">${r.EMPA}</td>
+    <td>
+      <div class="efic-bar">
+        <div class="efic-track"><div class="efic-fill ${eficFillClass(r.EFIC)}" style="width:${r.EFIC}%"></div></div>
+        ${eficBadge(r.EFIC)}
+      </div>
+    </td>
+  </tr>`).join('');
+
+  dc('producto');
+  chs['producto'] = new Chart(document.getElementById('ch-producto'),{
+    type:'doughnut',data:{
+      labels:D.byProducto.map(p=>p.producto),
+      datasets:[{data:D.byProducto.map(p=>p.TERM+p.ANUL+p.PEND),
+        backgroundColor:[C.blueA,C.tealA],borderColor:'#fff',borderWidth:3}]
+    },
+    options:{cutout:'60%',plugins:{legend:{position:'bottom'}}}
+  });
+
+  document.getElementById('prod-bars').innerHTML = D.byProducto.map(p=>({
+    label:p.producto, EFIC:p.EFIC
+  })).reduce((h,i)=>`${h}<div class="hbar-item">
+    <div class="hbar-meta"><span class="hbar-name">${i.label}</span><span class="hbar-val">${i.EFIC}%</span></div>
+    <div class="hbar-track"><div class="hbar-fill green" style="width:${i.EFIC}%"></div></div>
+  </div>`,'');
 }
 
-// ── CHART: REGIONAL ────────────────────────────────────────
-function renderRegional(data) {
-  destroyChart('regional');
-  const byReg = groupBy(data, 'Regional');
-  const regs  = Object.keys(byReg).sort();
-  charts['regional'] = new Chart(document.getElementById('chart-regional'), {
-    type: 'bar',
-    data: {
-      labels: regs,
-      datasets: [
-        { label: 'Terminadas', data: regs.map(r => sumKey(byReg[r], 'TERMINADA')), backgroundColor: C.green + 'cc', borderRadius: 4 },
-        { label: 'Anuladas',   data: regs.map(r => sumKey(byReg[r], 'ANULADA')),   backgroundColor: C.red   + 'cc', borderRadius: 4 },
-        { label: 'Pendientes', data: regs.map(r => sumKey(byReg[r], 'PENDIENTE')), backgroundColor: C.yellow + 'cc', borderRadius: 4 },
+// LIDERAZGO
+function buildLiderazgo(){
+  dc('sup-bar');
+  const sups = D.bySupervisor.map(s=>s.supervisor);
+  chs['sup-bar'] = new Chart(document.getElementById('ch-sup-bar'),{
+    type:'bar',data:{
+      labels:sups,
+      datasets:[
+        {label:'Terminadas',data:D.bySupervisor.map(s=>s.TERM),backgroundColor:C.greenA,borderRadius:4},
+        {label:'Anuladas',  data:D.bySupervisor.map(s=>s.ANUL),backgroundColor:C.redA,  borderRadius:4},
+        {label:'Pendientes',data:D.bySupervisor.map(s=>s.PEND),backgroundColor:C.amberA,borderRadius:4},
       ]
     },
-    options: {
-      responsive: true,
-      indexAxis: 'y',
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        x: { stacked: true, grid: { color: '#1f2e47' } },
-        y: { stacked: true, grid: { display: false } }
-      }
-    }
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true}}}
   });
+
+  document.getElementById('sup-efic-bars').innerHTML = D.bySupervisor.map(s=>
+    `<div class="hbar-item">
+      <div class="hbar-meta"><span class="hbar-name">${s.supervisor}</span><span class="hbar-val">${s.EFIC}%</span></div>
+      <div class="hbar-track"><div class="efic-fill ${eficFillClass(s.EFIC)}" style="width:${s.EFIC}%;height:5px;border-radius:3px;"></div></div>
+    </div>`).join('');
+
+  const ts = document.querySelector('#tbl-supervisor');
+  ts.innerHTML = D.bySupervisor.map(s=>`<tr>
+    <td><strong>${s.supervisor}</strong></td>
+    <td class="num num-navy">${s.TOTAL}</td>
+    <td class="num num-green">${s.TERM}</td>
+    <td class="num num-red">${s.ANUL}</td>
+    <td class="num num-amber">${s.PEND}</td>
+    <td class="num">${s.EMPA}</td>
+    <td>${eficBadge(s.EFIC)}</td>
+    <td>${s.EFIC>=85?'<span class="badge badge-green">En Meta</span>':s.EFIC>=70?'<span class="badge badge-amber">Monitorear</span>':'<span class="badge badge-red">Foco</span>'}</td>
+  </tr>`).join('');
+
+  const tl = document.querySelector('#tbl-linea');
+  tl.innerHTML = D.byLinea.map(l=>`<tr>
+    <td><strong>${l.linea}</strong></td>
+    <td class="num num-green">${l.TERM}</td>
+    <td class="num num-red">${l.ANUL}</td>
+    <td class="num num-amber">${l.PEND}</td>
+    <td>${eficBadge(l.EFIC)}</td>
+  </tr>`).join('');
+
+  const max = Math.max(...D.plantaSupvisor.map(p=>p.N));
+  document.getElementById('planta-bars').innerHTML = D.plantaSupvisor.map(p=>
+    `<div class="hbar-item">
+      <div class="hbar-meta"><span class="hbar-name">${p.supervisor}</span><span class="hbar-val">${p.N} asesores</span></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${(p.N/max*100).toFixed(1)}%"></div></div>
+    </div>`).join('');
 }
 
-// ── CHART: SEMANA ──────────────────────────────────────────
-function renderSemana(data) {
-  destroyChart('semana');
-  const bySem  = groupBy(data, 'SEMANA');
-  const sems   = Object.keys(bySem).sort();
-  charts['semana'] = new Chart(document.getElementById('chart-semana'), {
-    type: 'bar',
-    data: {
-      labels: sems,
-      datasets: [
-        { label: 'Terminadas', data: sems.map(s => sumKey(bySem[s], 'TERMINADA')), backgroundColor: C.green  + 'cc', borderRadius: 4 },
-        { label: 'Anuladas',   data: sems.map(s => sumKey(bySem[s], 'ANULADA')),   backgroundColor: C.red    + 'cc', borderRadius: 4 },
-        { label: 'Pendientes', data: sems.map(s => sumKey(bySem[s], 'PENDIENTE')), backgroundColor: C.yellow + 'cc', borderRadius: 4 },
+// TEMPORAL
+function buildTemporal(){
+  dc('diario');
+  chs['diario'] = new Chart(document.getElementById('ch-diario'),{
+    type:'bar',data:{
+      labels:D.byDay.map(d=>'D'+d.dia),
+      datasets:[
+        {label:'Terminadas',data:D.byDay.map(d=>d.TERM),backgroundColor:C.greenA,borderRadius:3},
+        {label:'Anuladas',  data:D.byDay.map(d=>d.ANUL),backgroundColor:C.redA,  borderRadius:3},
+        {label:'Pendientes',data:D.byDay.map(d=>d.PEND),backgroundColor:C.amberA,borderRadius:3},
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        x: { stacked: true, grid: { display: false } },
-        y: { stacked: true, grid: { color: '#1f2e47' } }
-      }
-    }
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true}}}
   });
-}
 
-// ── QUIEBRE BARS ───────────────────────────────────────────
-function renderQuiebre(data) {
-  const anuladas = data.filter(r => r['QUIEBRE'] && r['QUIEBRE'] !== '');
-  const byQ = {};
-  anuladas.forEach(r => {
-    const k = r['QUIEBRE'].trim();
-    if (k) byQ[k] = (byQ[k] || 0) + 1;
-  });
-  const sorted = Object.entries(byQ).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  const max = sorted[0]?.[1] || 1;
-  const container = document.getElementById('quiebre-bars');
-  container.innerHTML = sorted.length
-    ? sorted.map(([name, val]) => `
-      <div class="hbar-item">
-        <div class="hbar-meta">
-          <span class="hbar-name" title="${name}">${name}</span>
-          <span class="hbar-val">${val}</span>
-        </div>
-        <div class="hbar-track"><div class="hbar-fill" style="width:${(val/max*100).toFixed(1)}%"></div></div>
-      </div>`).join('')
-    : '<p style="color:var(--muted);font-size:13px;">Sin quiebres en la selección.</p>';
-}
-
-// ── CHART: ATRIBUIBLE ──────────────────────────────────────
-function renderAtrib(data) {
-  destroyChart('atrib');
-  const byA = {};
-  data.filter(r => r['ATRIBUIBLE']).forEach(r => {
-    const k = r['ATRIBUIBLE'].trim();
-    if (k) byA[k] = (byA[k] || 0) + 1;
-  });
-  const labels = Object.keys(byA);
-  const vals   = labels.map(k => byA[k]);
-  const colors = [C.accent, C.accent2, C.accent3, C.green, C.yellow, C.red, C.muted];
-  charts['atrib'] = new Chart(document.getElementById('chart-atrib'), {
-    type: 'pie',
-    data: {
-      labels,
-      datasets: [{
-        data: vals,
-        backgroundColor: colors.map(c => c + 'dd'),
-        borderColor: '#111827',
-        borderWidth: 2,
-        hoverOffset: 6,
-      }]
+  dc('regdia');
+  chs['regdia'] = new Chart(document.getElementById('ch-regdia'),{
+    type:'bar',data:{
+      labels:D.byRegDay.map(d=>'D'+d.dia),
+      datasets:[
+        {label:'Terminadas',data:D.byRegDay.map(d=>d.TERM),backgroundColor:C.greenA,borderRadius:3},
+        {label:'Anuladas',  data:D.byRegDay.map(d=>d.ANUL),backgroundColor:C.redA,  borderRadius:3},
+        {label:'Pendientes',data:D.byRegDay.map(d=>d.PEND),backgroundColor:C.amberA,borderRadius:3},
+      ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom' } }
-    }
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true}}}
   });
-}
 
-// ── TABLE: REGIONAL ────────────────────────────────────────
-function renderTblRegional(data) {
-  const byR = groupBy(data, 'Regional');
-  const regs = Object.keys(byR).sort();
-  const tbody = document.querySelector('#tbl-regional tbody');
-  tbody.innerHTML = regs.map(r => {
-    const rows  = byR[r];
-    const total = rows.length;
-    const term  = sumKey(rows, 'TERMINADA');
-    const anul  = sumKey(rows, 'ANULADA');
-    const pend  = sumKey(rows, 'PENDIENTE');
-    const empa  = sumKey(rows, 'EMPAQUETADAS');
-    const efic  = term + anul > 0 ? ((term / (term + anul)) * 100).toFixed(1) : '0.0';
-    const eficClass = efic >= 80 ? 'num-green' : efic >= 60 ? 'num-yellow' : 'num-red';
+  dc('semana');
+  chs['semana'] = new Chart(document.getElementById('ch-semana'),{
+    type:'bar',data:{
+      labels:D.byWeek.map(w=>w.semana),
+      datasets:[
+        {label:'Terminadas',data:D.byWeek.map(w=>w.TERM),backgroundColor:C.greenA,borderRadius:4},
+        {label:'Anuladas',  data:D.byWeek.map(w=>w.ANUL),backgroundColor:C.redA,  borderRadius:4},
+        {label:'Pendientes',data:D.byWeek.map(w=>w.PEND),backgroundColor:C.amberA,borderRadius:4},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true}}}
+  });
+
+  const ts = document.querySelector('#tbl-semana');
+  ts.innerHTML = D.byWeek.map(w=>{
+    const e = w.TERM+w.ANUL>0?((w.TERM/(w.TERM+w.ANUL))*100).toFixed(1):0;
     return `<tr>
-      <td><strong>${r}</strong></td>
-      <td class="num-accent">${total}</td>
-      <td class="num-green">${term}</td>
-      <td class="num-red">${anul}</td>
-      <td class="num-yellow">${pend}</td>
-      <td>${empa}</td>
-      <td class="${eficClass}">${efic}%</td>
+      <td>${w.semana}</td>
+      <td class="num num-green">${w.TERM}</td>
+      <td class="num num-red">${w.ANUL}</td>
+      <td class="num num-amber">${w.PEND}</td>
+      <td>${eficBadge(parseFloat(e))}</td>
     </tr>`;
   }).join('');
 }
 
-// ── TABLE: SUPERVISOR ──────────────────────────────────────
-function renderTblSupervisor(data) {
-  const byS = groupBy(data, 'SUPERVISOR');
-  const sups = Object.keys(byS).sort();
-  const tbody = document.querySelector('#tbl-supervisor tbody');
-  tbody.innerHTML = sups.map(s => {
-    const rows  = byS[s];
-    const total = rows.length;
-    const term  = sumKey(rows, 'TERMINADA');
-    const anul  = sumKey(rows, 'ANULADA');
-    const pend  = sumKey(rows, 'PENDIENTE');
-    const efic  = term + anul > 0 ? ((term / (term + anul)) * 100).toFixed(1) : '0.0';
-    const eficClass = efic >= 80 ? 'num-green' : efic >= 60 ? 'num-yellow' : 'num-red';
-    return `<tr>
-      <td><strong>${s}</strong></td>
-      <td class="num-accent">${total}</td>
-      <td class="num-green">${term}</td>
-      <td class="num-red">${anul}</td>
-      <td class="num-yellow">${pend}</td>
-      <td class="${eficClass}">${efic}%</td>
-    </tr>`;
-  }).join('');
+// ASESORES
+function buildAsesores(){
+  const ta = document.querySelector('#tbl-asesores');
+  ta.innerHTML = D.asesores.map((a,i)=>`<tr>
+    <td class="num num-navy">${i+1}</td>
+    <td style="font-size:12px;">${a.nombre}</td>
+    <td class="num" style="font-size:11px;">${a.SUPERVISOR}</td>
+    <td class="num num-navy">${a.TOTAL}</td>
+    <td class="num num-green">${a.TERM}</td>
+    <td class="num num-red">${a.ANUL}</td>
+    <td class="num num-amber">${a.PEND}</td>
+    <td>
+      <div class="efic-bar">
+        <div class="efic-track"><div class="efic-fill ${eficFillClass(a.EFIC)}" style="width:${Math.min(a.EFIC,100)}%"></div></div>
+        ${eficBadge(a.EFIC)}
+      </div>
+    </td>
+  </tr>`).join('');
+
+  const fa = document.getElementById('foco-asesores');
+  fa.innerHTML = D.asesoresFoco.map(a=>`
+    <div class="foco-item">
+      <div>
+        <div class="foco-name">${a.nombre}</div>
+        <div class="foco-sup">Supervisor: ${a.SUPERVISOR} · ${a.TOTAL} órdenes</div>
+      </div>
+      <div class="foco-right">
+        <span class="badge badge-red">Efic: ${a.EFIC}%</span>
+      </div>
+    </div>`).join('');
 }
 
-// ── MAIN RENDER ────────────────────────────────────────────
-function render() {
-  const data = getFiltered();
-  renderKPIs(data);
-  renderDiario(data);
-  renderDonut(data);
-  renderRegional(data);
-  renderSemana(data);
-  renderQuiebre(data);
-  renderAtrib(data);
-  renderTblRegional(data);
-  renderTblSupervisor(data);
+// QUIEBRES
+function buildQuiebres(){
+  const max = D.quiebres[0].N;
+  document.getElementById('quiebre-bars').innerHTML = D.quiebres.map(q=>`
+    <div class="hbar-item">
+      <div class="hbar-meta">
+        <span class="hbar-name" title="${q.quiebre}">${q.quiebre}</span>
+        <span class="hbar-val">${q.N}</span>
+      </div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${(q.N/max*100).toFixed(1)}%"></div></div>
+    </div>`).join('');
+
+  dc('atrib');
+  chs['atrib'] = new Chart(document.getElementById('ch-atrib'),{
+    type:'doughnut',data:{
+      labels:D.atribuible.map(a=>a.tipo),
+      datasets:[{data:D.atribuible.map(a=>a.N),
+        backgroundColor:[C.redA,C.navyA,C.amberA,C.tealA,C.blueA],
+        borderColor:'#fff',borderWidth:3,hoverOffset:6}]
+    },
+    options:{cutout:'58%',plugins:{legend:{position:'bottom'}}}
+  });
+
+  dc('atrib-bar');
+  const filtAtrib = D.atribuible.filter(a=>a.tipo!=='CARRUSEL');
+  chs['atrib-bar'] = new Chart(document.getElementById('ch-atrib-bar'),{
+    type:'bar',data:{
+      labels:filtAtrib.map(a=>a.tipo),
+      datasets:[{label:'Casos',data:filtAtrib.map(a=>a.N),
+        backgroundColor:[C.navyA,C.amberA,C.tealA,C.blueA],borderRadius:4}]
+    },
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false}},y:{grid:{display:false}}}}
+  });
 }
 
-// ── INIT ───────────────────────────────────────────────────
-(function init() {
-  document.getElementById('last-update').textContent =
-    'DATOS: ' + new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
-  populateFilters(RAW_DATA);
-  render();
-  ['f-semana','f-regional','f-supervisor','f-producto'].forEach(id =>
-    document.getElementById(id).addEventListener('change', render)
-  );
-})();
+// LEGALIZACIONES
+function buildLeg(){
+  dc('leg-donut');
+  chs['leg-donut'] = new Chart(document.getElementById('ch-leg-donut'),{
+    type:'doughnut',data:{
+      labels:D.legEstado.map(l=>l.estado),
+      datasets:[{data:D.legEstado.map(l=>l.N),
+        backgroundColor:[C.tealA,C.greenA,C.amberA],
+        borderColor:'#fff',borderWidth:3,hoverOffset:6}]
+    },
+    options:{cutout:'60%',plugins:{legend:{position:'bottom'}}}
+  });
+
+  dc('leg-regional');
+  const regs = [...new Set(D.legByRegional.map(r=>r.regional))];
+  const estados = [...new Set(D.legByRegional.map(r=>r.estado))];
+  const colors = [C.greenA,C.tealA,C.amberA];
+  chs['leg-regional'] = new Chart(document.getElementById('ch-leg-regional'),{
+    type:'bar',data:{
+      labels:regs,
+      datasets:estados.map((e,i)=>({
+        label:e,
+        data:regs.map(r=>{const f=D.legByRegional.find(x=>x.regional===r&&x.estado===e);return f?f.N:0;}),
+        backgroundColor:colors[i],borderRadius:4
+      }))
+    },
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true}}}
+  });
+
+  dc('pago');
+  chs['pago'] = new Chart(document.getElementById('ch-pago'),{
+    type:'doughnut',data:{
+      labels:D.pagoDist.map(p=>p.pago+''),
+      datasets:[{data:D.pagoDist.map(p=>p.N),
+        backgroundColor:[C.greenA,C.redA,C.amberA],
+        borderColor:'#fff',borderWidth:3,hoverOffset:6}]
+    },
+    options:{cutout:'60%',plugins:{legend:{position:'bottom'}}}
+  });
+
+  // MORA cells
+  const mw = document.getElementById('mora-wrap');
+  mw.innerHTML = `<div class="mora-grid">${D.pdteLeg.map(m=>`
+    <div class="mora-cell ${m.dias>=8?'critical':''}">
+      <div class="mora-days">${m.dias}d</div>
+      <div class="mora-label">días mora</div>
+      <div class="mora-n">${m.N}</div>
+    </div>`).join('')}</div>
+    <p style="margin-top:12px;font-size:11px;color:var(--muted);font-family:var(--mono);">Total: 1,083 pendientes · Mora promedio: 3.1 días · Críticos (≥8d): 10 registros</p>`;
+}
+
+// GEOGRAFÍA
+function buildGeo(){
+  dc('dpto-bar');
+  chs['dpto-bar'] = new Chart(document.getElementById('ch-dpto-bar'),{
+    type:'bar',data:{
+      labels:D.byDpto.map(d=>d.dpto),
+      datasets:[
+        {label:'Terminadas',data:D.byDpto.map(d=>d.TERM),backgroundColor:C.greenA,borderRadius:3},
+        {label:'Anuladas',  data:D.byDpto.map(d=>d.ANUL),backgroundColor:C.redA,  borderRadius:3},
+        {label:'Pendientes',data:D.byDpto.map(d=>d.PEND),backgroundColor:C.amberA,borderRadius:3},
+      ]
+    },
+    options:{responsive:true,indexAxis:'y',plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{color:'#e2e5eb'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}}}
+  });
+
+  const maxD = Math.max(...D.byDpto.map(d=>d.EFIC));
+  document.getElementById('dpto-efic-bars').innerHTML = D.byDpto.map(d=>`
+    <div class="hbar-item">
+      <div class="hbar-meta"><span class="hbar-name">${d.dpto}</span><span class="hbar-val">${d.EFIC}%</span></div>
+      <div class="hbar-track"><div class="efic-fill ${eficFillClass(d.EFIC)}" style="width:${d.EFIC}%;height:5px;border-radius:3px;"></div></div>
+    </div>`).join('');
+
+  document.querySelector('#tbl-dpto').innerHTML = D.byDpto.map((d,i)=>`<tr>
+    <td class="num num-navy">${i+1}</td>
+    <td><strong>${d.dpto}</strong></td>
+    <td class="num num-navy">${d.TOTAL}</td>
+    <td class="num num-green">${d.TERM}</td>
+    <td class="num num-red">${d.ANUL}</td>
+    <td class="num num-amber">${d.PEND}</td>
+    <td>${eficBadge(d.EFIC)}</td>
+  </tr>`).join('');
+
+  dc('mix');
+  chs['mix'] = new Chart(document.getElementById('ch-mix'),{
+    type:'doughnut',data:{
+      labels:D.byProducto.map(p=>p.producto),
+      datasets:[{data:D.byProducto.map(p=>p.TERM+p.ANUL+p.PEND),
+        backgroundColor:[C.blueA,C.tealA],borderColor:'#fff',borderWidth:3,hoverOffset:6}]
+    },
+    options:{cutout:'60%',plugins:{legend:{position:'bottom'}}}
+  });
+
+  dc('prod-efic-bar');
+  chs['prod-efic-bar'] = new Chart(document.getElementById('ch-prod-efic-bar'),{
+    type:'bar',data:{
+      labels:D.byProducto.map(p=>p.producto),
+      datasets:[
+        {label:'Terminadas',data:D.byProducto.map(p=>p.TERM),backgroundColor:C.greenA,borderRadius:4},
+        {label:'Anuladas',  data:D.byProducto.map(p=>p.ANUL),backgroundColor:C.redA,  borderRadius:4},
+        {label:'Pendientes',data:D.byProducto.map(p=>p.PEND),backgroundColor:C.amberA,borderRadius:4},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true}}}
+  });
+}
+
+// INSIGHTS
+function buildInsights(){
+  // Forecast chart
+  dc('forecast');
+  const diasRestantes = 24 - 13;
+  const ritmo = 650/13;
+  const proyDias = Array.from({length:11},(_,i)=>({dia:13+i+1, proy:Math.round(650+ritmo*(i+1))}));
+  chs['forecast'] = new Chart(document.getElementById('ch-forecast'),{
+    type:'line',data:{
+      labels:['D13',...proyDias.map(d=>'D'+d.dia)],
+      datasets:[
+        {label:'Real',data:[650,...Array(11).fill(null)],borderColor:C.green,pointBackgroundColor:C.green,borderWidth:2,tension:.3},
+        {label:'Proyección',data:[650,...proyDias.map(d=>d.proy)],borderColor:C.purple,borderDash:[5,4],pointBackgroundColor:C.purple,borderWidth:2,tension:.3},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'#e2e5eb'}}}}
+  });
+
+  // Foco asesores insights
+  document.getElementById('foco-insights').innerHTML = D.asesoresFoco.map(a=>`
+    <div class="foco-item">
+      <div>
+        <div class="foco-name">${a.nombre}</div>
+        <div class="foco-sup">Sup: ${a.SUPERVISOR} · ${a.TOTAL} órdenes · ${a.TERM} term · ${a.ANUL} anul</div>
+      </div>
+      <div class="foco-right"><span class="badge badge-red">Efic: ${a.EFIC}%</span></div>
+    </div>`).join('');
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+buildResumen();
+buildLiderazgo();
+buildTemporal();
+buildAsesores();
+buildQuiebres();
+buildLeg();
+buildGeo();
+buildInsights();
 </script>
 </body>
 </html>
