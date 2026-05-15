@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe Fibra · Canal Online</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1f2e47;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --green: #22d3a5;
+    --red: #f43f5e;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-head);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-left h1 {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: #fff;
+  }
+  .header-left h1 span { color: var(--accent); }
+  .header-left p {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .header-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  /* FILTERS */
+  .filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    align-items: center;
+  }
+  .filter-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+  select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-head);
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .2s;
+  }
+  select:hover, select:focus { border-color: var(--accent); }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s, border-color .2s;
+  }
+  .kpi:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi.total::before { background: var(--accent); }
+  .kpi.term::before { background: var(--green); }
+  .kpi.anul::before { background: var(--red); }
+  .kpi.pend::before { background: var(--yellow); }
+  .kpi.empa::before { background: var(--accent2); }
+  .kpi.efic::before { background: var(--accent3); }
+
+  .kpi-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    color: #fff;
+  }
+  .kpi.total .kpi-value { color: var(--accent); }
+  .kpi.term .kpi-value { color: var(--green); }
+  .kpi.anul .kpi-value { color: var(--red); }
+  .kpi.pend .kpi-value { color: var(--yellow); }
+  .kpi.empa .kpi-value { color: var(--accent2); }
+  .kpi.efic .kpi-value { color: var(--accent3); }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  /* CHART GRID */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .chart-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color .2s;
+  }
+  .chart-box:hover { border-color: var(--border); }
+
+  .col-8 { grid-column: span 8; }
+  .col-6 { grid-column: span 6; }
+  .col-4 { grid-column: span 4; }
+  .col-12 { grid-column: span 12; }
+
+  @media (max-width: 900px) {
+    .col-8, .col-6, .col-4, .col-12 { grid-column: span 12; }
+  }
+
+  .chart-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+  canvas { max-height: 280px; }
+
+  /* HORIZONTAL BARS (custom) */
+  .hbar-list { display: flex; flex-direction: column; gap: 10px; }
+  .hbar-item {}
+  .hbar-meta { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .hbar-name { color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%; }
+  .hbar-val { color: var(--accent); font-family: var(--font-mono); }
+  .hbar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent3)); transition: width .6s ease; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(31,46,71,0.5); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  .badge-green { background: rgba(34,211,165,.15); color: var(--green); }
+  .badge-red { background: rgba(244,63,94,.15); color: var(--red); }
+  .badge-yellow { background: rgba(245,158,11,.15); color: var(--yellow); }
+
+  .num-green { color: var(--green); font-family: var(--font-mono); }
+  .num-red { color: var(--red); font-family: var(--font-mono); }
+  .num-yellow { color: var(--yellow); font-family: var(--font-mono); }
+  .num-accent { color: var(--accent); font-family: var(--font-mono); }
+
+  /* SECTION DIVIDER */
+  .section-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    padding: 8px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <h1>Informe <span>Fibra</span></h1>
+      <p>Canal Online · Seguimiento Mayo 2026</p>
+    </div>
+    <div class="header-badge" id="last-update">CARGANDO...</div>
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <span class="filter-label">Filtrar por:</span>
+    <select id="f-semana"><option value="">Todas las semanas</option></select>
+    <select id="f-regional"><option value="">Todas las regionales</option></select>
+    <select id="f-supervisor"><option value="">Todos los supervisores</option></select>
+    <select id="f-producto"><option value="">Todos los productos</option></select>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi total">
+      <div class="kpi-label">Total Registros</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub">órdenes en seguimiento</div>
+    </div>
+    <div class="kpi term">
+      <div class="kpi-label">Terminadas</div>
+      <div class="kpi-value" id="kpi-term">—</div>
+      <div class="kpi-sub" id="kpi-term-pct">—% del total</div>
+    </div>
+    <div class="kpi anul">
+      <div class="kpi-label">Anuladas</div>
+      <div class="kpi-value" id="kpi-anul">—</div>
+      <div class="kpi-sub" id="kpi-anul-pct">—% del total</div>
+    </div>
+    <div class="kpi pend">
+      <div class="kpi-label">Pendientes</div>
+      <div class="kpi-value" id="kpi-pend">—</div>
+      <div class="kpi-sub" id="kpi-pend-pct">—% del total</div>
+    </div>
+    <div class="kpi empa">
+      <div class="kpi-label">Empaquetadas</div>
+      <div class="kpi-value" id="kpi-empa">—</div>
+      <div class="kpi-sub">trio / convergente</div>
+    </div>
+    <div class="kpi efic">
+      <div class="kpi-label">Eficiencia</div>
+      <div class="kpi-value" id="kpi-efic">—%</div>
+      <div class="kpi-sub">term / (term + anul)</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="section-title">Evolución diaria</div>
+  <div class="chart-grid">
+    <div class="chart-box col-8">
+      <div class="chart-title">Terminadas · Anuladas · Pendientes por día</div>
+      <canvas id="chart-diario"></canvas>
+    </div>
+    <div class="chart-box col-4">
+      <div class="chart-title">Estado general</div>
+      <canvas id="chart-donut"></canvas>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="section-title">Desagregación</div>
+  <div class="chart-grid">
+    <div class="chart-box col-6">
+      <div class="chart-title">Por Regional</div>
+      <canvas id="chart-regional"></canvas>
+    </div>
+    <div class="chart-box col-6">
+      <div class="chart-title">Por Semana</div>
+      <canvas id="chart-semana"></canvas>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 3 -->
+  <div class="section-title">Análisis de quiebres</div>
+  <div class="chart-grid">
+    <div class="chart-box col-6">
+      <div class="chart-title">Top Motivos de Quiebre</div>
+      <div class="hbar-list" id="quiebre-bars"></div>
+    </div>
+    <div class="chart-box col-6">
+      <div class="chart-title">Atribuible</div>
+      <canvas id="chart-atrib"></canvas>
+    </div>
+  </div>
+
+  <!-- TABLE: REGIONAL -->
+  <div class="section-title">Resumen por Regional</div>
+  <div class="chart-box col-12" style="margin-bottom:16px;">
+    <div class="table-wrap">
+      <table id="tbl-regional">
+        <thead>
+          <tr>
+            <th>Regional</th>
+            <th>Total</th>
+            <th>Terminadas</th>
+            <th>Anuladas</th>
+            <th>Pendientes</th>
+            <th>Empaquetadas</th>
+            <th>Eficiencia</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TABLE: SUPERVISOR -->
+  <div class="section-title">Resumen por Supervisor</div>
+  <div class="chart-box col-12" style="margin-bottom:16px;">
+    <div class="table-wrap">
+      <table id="tbl-supervisor">
+        <thead>
+          <tr>
+            <th>Supervisor</th>
+            <th>Total</th>
+            <th>Terminadas</th>
+            <th>Anuladas</th>
+            <th>Pendientes</th>
+            <th>Eficiencia</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    INFORME FIBRA · CANAL ONLINE · DATOS: HOJA BBDD · MAYO 2026
+  </footer>
+</div>
+
+<script>
+// ── CHART DEFAULTS ─────────────────────────────────────────
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = '#1f2e47';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+const C = {
+  accent:  '#00e5ff',
+  accent2: '#ff6b35',
+  accent3: '#7c3aed',
+  green:   '#22d3a5',
+  red:     '#f43f5e',
+  yellow:  '#f59e0b',
+  muted:   '#64748b',
+};
+
+// ── CHART INSTANCES ────────────────────────────────────────
+let charts = {};
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+function pct(n, d) { return d ? ((n / d) * 100).toFixed(1) : '0.0'; }
+function groupBy(arr, key) {
+  return arr.reduce((acc, row) => {
+    const k = row[key] || '(vacío)';
+    if (!acc[k]) acc[k] = [];
+    acc[k].push(row);
+    return acc;
+  }, {});
+}
+function sumKey(arr, key) { return arr.reduce((s, r) => s + (Number(r[key]) || 0), 0); }
+
+// ── POPULATE FILTERS ───────────────────────────────────────
+function populateFilters(data) {
+  const semanas   = [...new Set(data.map(r => r['SEMANA']))].filter(Boolean).sort();
+  const regionals = [...new Set(data.map(r => r['Regional']))].filter(Boolean).sort();
+  const supervisors = [...new Set(data.map(r => r['SUPERVISOR']))].filter(Boolean).sort();
+  const productos = [...new Set(data.map(r => r['Producto']))].filter(Boolean).sort();
+
+  function fillSelect(id, vals) {
+    const el = document.getElementById(id);
+    vals.forEach(v => {
+      const o = document.createElement('option');
+      o.value = o.textContent = v;
+      el.appendChild(o);
+    });
+  }
+  fillSelect('f-semana', semanas);
+  fillSelect('f-regional', regionals);
+  fillSelect('f-supervisor', supervisors);
+  fillSelect('f-producto', productos);
+}
+
+// ── FILTER DATA ────────────────────────────────────────────
+function getFiltered() {
+  const sem = document.getElementById('f-semana').value;
+  const reg = document.getElementById('f-regional').value;
+  const sup = document.getElementById('f-supervisor').value;
+  const pro = document.getElementById('f-producto').value;
+
+  return RAW_DATA.filter(r =>
+    (!sem || r['SEMANA'] === sem) &&
+    (!reg || r['Regional'] === reg) &&
+    (!sup || r['SUPERVISOR'] === sup) &&
+    (!pro || r['Producto'] === pro)
+  );
+}
+
+// ── RENDER KPIs ────────────────────────────────────────────
+function renderKPIs(data) {
+  const total = data.length;
+  const term  = sumKey(data, 'TERMINADA');
+  const anul  = sumKey(data, 'ANULADA');
+  const pend  = sumKey(data, 'PENDIENTE');
+  const empa  = sumKey(data, 'EMPAQUETADAS');
+  const efic  = term + anul > 0 ? ((term / (term + anul)) * 100).toFixed(1) : '0.0';
+
+  document.getElementById('kpi-total').textContent = total.toLocaleString();
+  document.getElementById('kpi-term').textContent  = term.toLocaleString();
+  document.getElementById('kpi-term-pct').textContent = pct(term, total) + '% del total';
+  document.getElementById('kpi-anul').textContent  = anul.toLocaleString();
+  document.getElementById('kpi-anul-pct').textContent = pct(anul, total) + '% del total';
+  document.getElementById('kpi-pend').textContent  = pend.toLocaleString();
+  document.getElementById('kpi-pend-pct').textContent = pct(pend, total) + '% del total';
+  document.getElementById('kpi-empa').textContent  = empa.toLocaleString();
+  document.getElementById('kpi-efic').textContent  = efic + '%';
+}
+
+// ── CHART: DIARIO ──────────────────────────────────────────
+function renderDiario(data) {
+  destroyChart('diario');
+  const byDay = groupBy(data, 'DIA SEG');
+  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b);
+  const term = days.map(d => sumKey(byDay[d], 'TERMINADA'));
+  const anul = days.map(d => sumKey(byDay[d], 'ANULADA'));
+  const pend = days.map(d => sumKey(byDay[d], 'PENDIENTE'));
+
+  charts['diario'] = new Chart(document.getElementById('chart-diario'), {
+    type: 'bar',
+    data: {
+      labels: days.map(d => 'D' + d),
+      datasets: [
+        { label: 'Terminadas', data: term, backgroundColor: C.green + 'cc', borderRadius: 4 },
+        { label: 'Anuladas',   data: anul, backgroundColor: C.red   + 'cc', borderRadius: 4 },
+        { label: 'Pendientes', data: pend, backgroundColor: C.yellow + 'cc', borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, grid: { color: '#1f2e47' } }
+      }
+    }
+  });
+}
+
+// ── CHART: DONUT ───────────────────────────────────────────
+function renderDonut(data) {
+  destroyChart('donut');
+  const term = sumKey(data, 'TERMINADA');
+  const anul = sumKey(data, 'ANULADA');
+  const pend = sumKey(data, 'PENDIENTE');
+
+  charts['donut'] = new Chart(document.getElementById('chart-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Terminadas', 'Anuladas', 'Pendientes'],
+      datasets: [{
+        data: [term, anul, pend],
+        backgroundColor: [C.green + 'dd', C.red + 'dd', C.yellow + 'dd'],
+        borderColor: '#111827',
+        borderWidth: 3,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom' },
+      }
+    }
+  });
+}
+
+// ── CHART: REGIONAL ────────────────────────────────────────
+function renderRegional(data) {
+  destroyChart('regional');
+  const byReg = groupBy(data, 'Regional');
+  const regs  = Object.keys(byReg).sort();
+  charts['regional'] = new Chart(document.getElementById('chart-regional'), {
+    type: 'bar',
+    data: {
+      labels: regs,
+      datasets: [
+        { label: 'Terminadas', data: regs.map(r => sumKey(byReg[r], 'TERMINADA')), backgroundColor: C.green + 'cc', borderRadius: 4 },
+        { label: 'Anuladas',   data: regs.map(r => sumKey(byReg[r], 'ANULADA')),   backgroundColor: C.red   + 'cc', borderRadius: 4 },
+        { label: 'Pendientes', data: regs.map(r => sumKey(byReg[r], 'PENDIENTE')), backgroundColor: C.yellow + 'cc', borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true,
+      indexAxis: 'y',
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { stacked: true, grid: { color: '#1f2e47' } },
+        y: { stacked: true, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ── CHART: SEMANA ──────────────────────────────────────────
+function renderSemana(data) {
+  destroyChart('semana');
+  const bySem  = groupBy(data, 'SEMANA');
+  const sems   = Object.keys(bySem).sort();
+  charts['semana'] = new Chart(document.getElementById('chart-semana'), {
+    type: 'bar',
+    data: {
+      labels: sems,
+      datasets: [
+        { label: 'Terminadas', data: sems.map(s => sumKey(bySem[s], 'TERMINADA')), backgroundColor: C.green  + 'cc', borderRadius: 4 },
+        { label: 'Anuladas',   data: sems.map(s => sumKey(bySem[s], 'ANULADA')),   backgroundColor: C.red    + 'cc', borderRadius: 4 },
+        { label: 'Pendientes', data: sems.map(s => sumKey(bySem[s], 'PENDIENTE')), backgroundColor: C.yellow + 'cc', borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, grid: { color: '#1f2e47' } }
+      }
+    }
+  });
+}
+
+// ── QUIEBRE BARS ───────────────────────────────────────────
+function renderQuiebre(data) {
+  const anuladas = data.filter(r => r['QUIEBRE'] && r['QUIEBRE'] !== '');
+  const byQ = {};
+  anuladas.forEach(r => {
+    const k = r['QUIEBRE'].trim();
+    if (k) byQ[k] = (byQ[k] || 0) + 1;
+  });
+  const sorted = Object.entries(byQ).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const max = sorted[0]?.[1] || 1;
+  const container = document.getElementById('quiebre-bars');
+  container.innerHTML = sorted.length
+    ? sorted.map(([name, val]) => `
+      <div class="hbar-item">
+        <div class="hbar-meta">
+          <span class="hbar-name" title="${name}">${name}</span>
+          <span class="hbar-val">${val}</span>
+        </div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:${(val/max*100).toFixed(1)}%"></div></div>
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-size:13px;">Sin quiebres en la selección.</p>';
+}
+
+// ── CHART: ATRIBUIBLE ──────────────────────────────────────
+function renderAtrib(data) {
+  destroyChart('atrib');
+  const byA = {};
+  data.filter(r => r['ATRIBUIBLE']).forEach(r => {
+    const k = r['ATRIBUIBLE'].trim();
+    if (k) byA[k] = (byA[k] || 0) + 1;
+  });
+  const labels = Object.keys(byA);
+  const vals   = labels.map(k => byA[k]);
+  const colors = [C.accent, C.accent2, C.accent3, C.green, C.yellow, C.red, C.muted];
+  charts['atrib'] = new Chart(document.getElementById('chart-atrib'), {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        backgroundColor: colors.map(c => c + 'dd'),
+        borderColor: '#111827',
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+// ── TABLE: REGIONAL ────────────────────────────────────────
+function renderTblRegional(data) {
+  const byR = groupBy(data, 'Regional');
+  const regs = Object.keys(byR).sort();
+  const tbody = document.querySelector('#tbl-regional tbody');
+  tbody.innerHTML = regs.map(r => {
+    const rows  = byR[r];
+    const total = rows.length;
+    const term  = sumKey(rows, 'TERMINADA');
+    const anul  = sumKey(rows, 'ANULADA');
+    const pend  = sumKey(rows, 'PENDIENTE');
+    const empa  = sumKey(rows, 'EMPAQUETADAS');
+    const efic  = term + anul > 0 ? ((term / (term + anul)) * 100).toFixed(1) : '0.0';
+    const eficClass = efic >= 80 ? 'num-green' : efic >= 60 ? 'num-yellow' : 'num-red';
+    return `<tr>
+      <td><strong>${r}</strong></td>
+      <td class="num-accent">${total}</td>
+      <td class="num-green">${term}</td>
+      <td class="num-red">${anul}</td>
+      <td class="num-yellow">${pend}</td>
+      <td>${empa}</td>
+      <td class="${eficClass}">${efic}%</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TABLE: SUPERVISOR ──────────────────────────────────────
+function renderTblSupervisor(data) {
+  const byS = groupBy(data, 'SUPERVISOR');
+  const sups = Object.keys(byS).sort();
+  const tbody = document.querySelector('#tbl-supervisor tbody');
+  tbody.innerHTML = sups.map(s => {
+    const rows  = byS[s];
+    const total = rows.length;
+    const term  = sumKey(rows, 'TERMINADA');
+    const anul  = sumKey(rows, 'ANULADA');
+    const pend  = sumKey(rows, 'PENDIENTE');
+    const efic  = term + anul > 0 ? ((term / (term + anul)) * 100).toFixed(1) : '0.0';
+    const eficClass = efic >= 80 ? 'num-green' : efic >= 60 ? 'num-yellow' : 'num-red';
+    return `<tr>
+      <td><strong>${s}</strong></td>
+      <td class="num-accent">${total}</td>
+      <td class="num-green">${term}</td>
+      <td class="num-red">${anul}</td>
+      <td class="num-yellow">${pend}</td>
+      <td class="${eficClass}">${efic}%</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── MAIN RENDER ────────────────────────────────────────────
+function render() {
+  const data = getFiltered();
+  renderKPIs(data);
+  renderDiario(data);
+  renderDonut(data);
+  renderRegional(data);
+  renderSemana(data);
+  renderQuiebre(data);
+  renderAtrib(data);
+  renderTblRegional(data);
+  renderTblSupervisor(data);
+}
+
+// ── INIT ───────────────────────────────────────────────────
+(function init() {
+  document.getElementById('last-update').textContent =
+    'DATOS: ' + new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+  populateFilters(RAW_DATA);
+  render();
+  ['f-semana','f-regional','f-supervisor','f-producto'].forEach(id =>
+    document.getElementById(id).addEventListener('change', render)
+  );
+})();
+</script>
+</body>
+</html>
